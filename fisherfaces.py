@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 IMAGE_WIDTH = 10
 IMAGE_HEIGHT = 10
 
+import yalefaces
+
 class Fisherfaces:
 
     # Loading Images from the Images Folder
@@ -50,8 +52,9 @@ class Fisherfaces:
     def compute_fisherfaces(self, images, labels):
         # first, normalize all images
         # X = normalize()
+        print(labels)
         X = np.array([self.normalize(image) for image in images])
-
+        print(X.shape)
         # reduce dimensionality potentially
         # num samples is how many images
         # num features should be 250 x 250
@@ -66,16 +69,20 @@ class Fisherfaces:
         Sw = np.zeros((num_features, num_features)) # within class
         Sb = np.zeros((num_features, num_features)) # between-class
 
-        unique_labels = set(labels)
+        unique_labels = list(set(labels))
 
-        class_means = [0 for i in labels]
+        class_means = [0 for i in unique_labels]
         
         # Compute class means and scatter matrices
         # c is each label
-        for label in unique_labels:
+        for i in range(len(unique_labels)):
+            label = unique_labels[i]
             class_samples = X[np.array(labels) == label] # each c
             class_mean = np.mean(class_samples, axis=0) # calculate ui
-            class_means[np.array(labels) == label] = class_mean
+            
+            class_means[i] = class_mean
+            
+            
             # Within-class scatter matrix
 
             for class_sample in class_samples:
@@ -120,12 +127,10 @@ class Fisherfaces:
     def get_fisherface(self):
         return self.fisherfaces
 
-    def __init__(self):
+    def __init__(self, images, labels):
         self.num_images = 0
         self.average_image = [0 for x in range(IMAGE_WIDTH*IMAGE_HEIGHT)]
-        self.images = []
-        self.labels = []
-        self.loadimages()
+        self.images, self.labels = images, labels
         self.fisherfaces, self.meanface, self.class_means = self.compute_fisherfaces(self.images, self.labels)
 
    
