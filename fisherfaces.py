@@ -2,9 +2,10 @@ import os
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+import io
 
-IMAGE_WIDTH = 10
-IMAGE_HEIGHT = 10
+IMAGE_WIDTH = 50
+IMAGE_HEIGHT = 50
 
 import yalefaces
 
@@ -52,9 +53,7 @@ class Fisherfaces:
     def compute_fisherfaces(self, images, labels):
         # first, normalize all images
         # X = normalize()
-        print(labels)
         X = np.array([self.normalize(image) for image in images])
-        print(X.shape)
         # reduce dimensionality potentially
         # num samples is how many images
         # num features should be 250 x 250
@@ -112,17 +111,48 @@ class Fisherfaces:
         # how to compute class means???
         return eigenvectors.real.T, mean_all, class_means  # Return the top eigenfaces as rows of the matrix
 
-    def predict(self, image):
+    def convert_bin(self, filename):
+        with open(filename, 'rb') as file:
+        # Read the content of the binary file
+            binary_data = file.read()
+            image = Image.open(io.BytesIO(binary_data))
+            resized_image = image.resize((IMAGE_HEIGHT,IMAGE_WIDTH))
+
+            return np.array(resized_image)
+    
+    def convert_jpeg(self, filename):
+            image = Image.open(filename)
+            resized_image = image.resize((IMAGE_HEIGHT,IMAGE_WIDTH))
+
+            # extract the pixel data from the image and convert to greyscale
+            pixel_data = list(resized_image.getdata())
+            greyscale_data = [0 for x in range(IMAGE_WIDTH*IMAGE_HEIGHT)]
+            for i in range(len(pixel_data)):
+                # using the weighted grayscale method, which weights colors according to their wavelengths
+                rgb = pixel_data[i]
+                greyscale_data[i] = 0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]
+
+            # save the images for our viewing pleasure
+            greyscale_data = np.asarray(greyscale_data)
+            greyscale_mat = greyscale_data.reshape(IMAGE_HEIGHT, IMAGE_WIDTH)
+
+            return greyscale_mat
+        
+    def predict(self, filename, img_type):
+        image = None
+        if img_type == 'jpeg': image = self.convert_jpeg(filename)
+        if img_type == 'bin': image = self.convert_bin(filename)
+
         diff = image - self.mean_face
         projection = np.dot(diff, self.fisherfaces)
 
-        distances = np.linalg.norm(projection - self.class_means, axis=1)
-        predicted_label = np.argmin(distances)
-        confidence = 1 / (1 + distances[predicted_label])
+        distances = np.linalg.norm(np.abs(projection - self.class_means), axis = 1)
+       
+        #print(np.sum(distances))
+        predicted_label = np.argmin(np.sum(distances, axis=1))
+        #confidence = 1 / (1 + distances[predicted_label])
 
-        return predicted_label, confidence        
-
-    
+        return predicted_label#, confidence        
 
     def get_fisherface(self):
         return self.fisherfaces
@@ -131,6 +161,6 @@ class Fisherfaces:
         self.num_images = 0
         self.average_image = [0 for x in range(IMAGE_WIDTH*IMAGE_HEIGHT)]
         self.images, self.labels = images, labels
-        self.fisherfaces, self.meanface, self.class_means = self.compute_fisherfaces(self.images, self.labels)
+        self.fisherfaces, self.mean_face, self.class_means = self.compute_fisherfaces(self.images, self.labels)
 
    
