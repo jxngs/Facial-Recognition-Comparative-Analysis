@@ -4,8 +4,8 @@ from PIL import Image
 import io
 
 
-IMAGE_WIDTH = 50
-IMAGE_HEIGHT = 50
+IMAGE_WIDTH = 250
+IMAGE_HEIGHT = 250
 
 def yale_data():
     # for each file in the images directory...

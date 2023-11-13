@@ -4,10 +4,12 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import io
 
-IMAGE_WIDTH = 50
-IMAGE_HEIGHT = 50
+IMAGE_WIDTH = 250
+IMAGE_HEIGHT = 250
 
 import yalefaces
+
+#https://github.com/pavlin-policar/facial-recognition/blob/master/facial_recognition/model.py
 
 class Fisherfaces:
 
@@ -59,8 +61,6 @@ class Fisherfaces:
         # num features should be 250 x 250
         num_samples, num_features, width = X.shape
 
-        # X is a random sample from c classes
-            # how to determine classes???
         
         mean_all = np.mean(X, axis=0) # take mean
 
@@ -87,15 +87,14 @@ class Fisherfaces:
             for class_sample in class_samples:
                 Sw += np.dot((class_sample - class_mean).T, (class_sample - class_mean))
 
-                # Between-class scatter matrix
+            # Between-class scatter matrix
             Sb += len(class_samples) * np.dot((class_mean - mean_all), (class_mean - mean_all).T)
 
         # create projection, W, that maximizes class separability criterion
-        # Solve the generalized eigenvalue problem
-        # print(Sw, Sb, Sw.shape, Sb.shape)
-        # print(np.linalg.det(Sw), np.linalg.det(Sb))
 
-        # temp fix, test on more values
+        # Sw may be singular
+        # find Wpca
+        
         eigenvalues, eigenvectors = np.linalg.eig(np.linalg.inv(Sw).dot(Sb))
 
         # Sort eigenvalues and corresponding eigenvectors in descending order
@@ -143,16 +142,22 @@ class Fisherfaces:
         if img_type == 'jpeg': image = self.convert_jpeg(filename)
         if img_type == 'bin': image = self.convert_bin(filename)
 
-        diff = image - self.mean_face
+        diff = self.normalize(image) - self.mean_face
+        
+        # covariance matrix
+        # C = np.dot(image.T, image) / (IMAGE_WIDTH - 1)
+        # U, S, V = np.linalg.svd(C)
+
+
         projection = np.dot(diff, self.fisherfaces)
 
         distances = np.linalg.norm(np.abs(projection - self.class_means), axis = 1)
        
         #print(np.sum(distances))
         predicted_label = np.argmin(np.sum(distances, axis=1))
-        #confidence = 1 / (1 + distances[predicted_label])
+        distance = np.sum(distances, axis=1)[predicted_label]
 
-        return predicted_label#, confidence        
+        return predicted_label, distance        
 
     def get_fisherface(self):
         return self.fisherfaces
