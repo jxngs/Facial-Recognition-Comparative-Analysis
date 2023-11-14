@@ -4,6 +4,8 @@ from fisherfaces import Fisherfaces
 import yalefaces
 NUM_FEATURES = 300
 #e = Eigenfaces()
+from PIL import Image
+
 images, labels = yalefaces.yale_data(NUM_FEATURES)
 
 f = Fisherfaces(images, labels, NUM_FEATURES)
@@ -15,6 +17,5 @@ for i in range(1, 16):
     print('pred', i, pred)
     if 'subject' + num == pred[0]: accuracy += 1
 print('accuracy', accuracy/15)
-# labels = ['a', 'b']
-# img = ['aaaa', 'bbb']
-# print(img[labels == 'a'])
+
+f.save_face(f.mean_face, 'mean.jpeg')

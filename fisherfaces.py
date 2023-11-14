@@ -1,10 +1,8 @@
 import os
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import matplotlib.pyplot as plt
 import io
-
-import yalefaces
 
 #https://github.com/pavlin-policar/facial-recognition/blob/master/facial_recognition/model.py
 
@@ -14,7 +12,7 @@ class Fisherfaces:
             self.images, self.labels = images, labels
             self.classes = list(set(labels))
             self.num_features = num_features
-            self.fisherfaces, self.mean_face, self.class_means = self.compute_fisherfaces(self.images, self.labels)
+            self.fisherfaces, self.mean_face, self.class_means, self.basis = self.compute_fisherfaces(self.images, self.labels)
             
 
     def normalize(self, matrix, mean_all):
@@ -29,8 +27,6 @@ class Fisherfaces:
         return normalized_matrix
         
     def compute_fisherfaces(self, images, labels):
-        
-        
         # class means
         unique_labels = list(set(labels))
         class_means = []
@@ -42,6 +38,10 @@ class Fisherfaces:
 
         class_means = np.array(class_means)
         mean_all = np.mean(class_means, axis=0)
+        # class means and mean_all are correct
+
+        for i, c in enumerate(class_means):
+            self.save_face(c, 'class' + str(i + 1) + '.jpeg')
 
         # first, normalize all images
         X = np.array([self.normalize(image, mean_all) for image in images])
@@ -60,27 +60,23 @@ class Fisherfaces:
                 Sw += np.dot((class_sample - class_means[i]).T, (class_sample - class_means[i]))
 
             # Between-class scatter matrix
-            Sb += len(class_samples) * np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
+            Sb += len(X) * np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
 
         # create projection, W, that maximizes class separability criterion
         
         eigenvalues, eigenvectors = np.linalg.eig(np.dot(np.linalg.inv(Sw),(Sb)))
+        sort = np.argsort(eigenvalues)[:-1]
+        eigenvalues = eigenvalues[sort]
+        eigenvectors = eigenvectors[:, sort]
 
-        # Sort eigenvalues and corresponding eigenvectors in descending order
-        sorted_indices = np.argsort(eigenvalues)[::-1]
-        eigenvalues = eigenvalues[sorted_indices]
-        eigenvectors = eigenvectors[:, sorted_indices]
-
-        return eigenvectors, mean_all, np.dot(class_means, eigenvectors)
-        return eigenvectors.real.T, mean_all, class_means  # Return the top eigenfaces as rows of the matrix
+        return eigenvectors, mean_all, np.dot(class_means, eigenvectors), eigenvalues
 
     def convert_bin(self, filename):
         with open(filename, 'rb') as file:
         # Read the content of the binary file
             binary_data = file.read()
             image = Image.open(io.BytesIO(binary_data))
-            resized_image = image.resize((self.num_features,self.num_features))
-
+            resized_image =  image.resize((self.num_features,self.num_features))
             return np.array(resized_image)
     
     def convert_jpeg(self, filename):
@@ -107,22 +103,26 @@ class Fisherfaces:
         if img_type == 'bin': image = self.convert_bin(filename)
 
         projection = np.dot(image, self.fisherfaces)
+        
+        self.save_face(self.fisherfaces, 'proj/' + 'fisher' + '.jpeg')
+        self.save_face(image, 'proj/' + 'img' + '.jpeg')
+        self.save_face(projection, 'proj/' + 'proj' + '.jpeg')
+        # broke projection????
 
-        # distances = np.linalg.norm(np.abs(projection - self.class_means), axis = 1)
         distances = []
         for c in self.class_means:
             distances.append(np.linalg.norm(projection - c))
-       # distances = np.linalg.norm(projection - self.class_means, axis=(1, 2))
         distances = np.array(distances)
        
         predicted_label = np.argmin(distances)
         distance = distances[predicted_label]
-
         return self.classes[predicted_label], distance        
 
     def get_fisherface(self):
         return self.fisherfaces
 
+    def save_face(self, matrix, filename):
+         plt.imsave('altered_images/'+filename, matrix)
     
 
    
