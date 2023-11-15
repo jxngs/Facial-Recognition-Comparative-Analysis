@@ -15,18 +15,19 @@ class Fisherfaces:
             self.fisherfaces, self.mean_face, self.class_means, self.basis = self.compute_fisherfaces(self.images, self.labels)
             
 
-    def normalize(self, matrix, mean_all):
-        return matrix
+    def normalize(self, matrix, mean_all):    
+        return matrix 
     
         # return normalized image
         min_val = np.min(mean_all)
         max_val = np.max(mean_all)
     
         normalized_matrix = 255 * (matrix - min_val) / (max_val - min_val)
-
+    
         return normalized_matrix
         
     def compute_fisherfaces(self, images, labels):
+        n = len(images)
         # class means
         unique_labels = list(set(labels))
         class_means = []
@@ -38,13 +39,14 @@ class Fisherfaces:
 
         class_means = np.array(class_means)
         mean_all = np.mean(class_means, axis=0)
+        
         # class means and mean_all are correct
 
         for i, c in enumerate(class_means):
             self.save_face(c, 'class' + str(i + 1) + '.jpeg')
 
-        # first, normalize all images
-        X = np.array([self.normalize(image, mean_all) for image in images])
+        # normalize all images
+        X = np.array([image - mean_all for image in images])
         
         Sw = np.zeros((self.num_features, self.num_features)) # within class
         Sb = np.zeros((self.num_features, self.num_features)) # between-class
@@ -60,7 +62,7 @@ class Fisherfaces:
                 Sw += np.dot((class_sample - class_means[i]).T, (class_sample - class_means[i]))
 
             # Between-class scatter matrix
-            Sb += len(X) * np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
+            Sb +=  np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
 
         # create projection, W, that maximizes class separability criterion
         
@@ -78,6 +80,7 @@ class Fisherfaces:
             image = Image.open(io.BytesIO(binary_data))
             resized_image =  image.resize((self.num_features,self.num_features))
             return np.array(resized_image)
+
     
     def convert_jpeg(self, filename):
             image = Image.open(filename)
@@ -102,12 +105,11 @@ class Fisherfaces:
         if img_type == 'jpeg': image = self.convert_jpeg(filename)
         if img_type == 'bin': image = self.convert_bin(filename)
 
-        projection = np.dot(image, self.fisherfaces)
+        projection = np.dot(image, self.fisherfaces) 
         
         self.save_face(self.fisherfaces, 'proj/' + 'fisher' + '.jpeg')
         self.save_face(image, 'proj/' + 'img' + '.jpeg')
         self.save_face(projection, 'proj/' + 'proj' + '.jpeg')
-        # broke projection????
 
         distances = []
         for c in self.class_means:
@@ -122,7 +124,7 @@ class Fisherfaces:
         return self.fisherfaces
 
     def save_face(self, matrix, filename):
-         plt.imsave('altered_images/'+filename, matrix)
+        plt.imsave('altered_images/'+filename, matrix, cmap='gray')
     
 
    
