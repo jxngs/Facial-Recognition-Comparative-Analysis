@@ -97,9 +97,9 @@ class Eigenfaces:
         
         for ind,trainingpoint in enumerate(training):
             training[ind][0]=self.get_Histogram(trainingpoint[0])
-        
+        correct=0
         for ind,testingpoint in enumerate(testing):
-            testing[ind] = [self.get_Histogram(testingpoint)]
+            testing[ind][0] = self.get_Histogram(testingpoint)
             nearest_neighbors = self.knn(testing[ind][0], k, metric)
             freqs={}
             for neighbor in nearest_neighbors:
@@ -113,7 +113,10 @@ class Eigenfaces:
                     maxkey=k
             conf_measure = maxval/k
             testing[ind] = [self.get_Histogram(testingpoint), maxval, maxkey, conf_measure]
+            if maxkey==testing[ind][1]:
+                correct+=1
             print("Classified As " + maxkey)
+        return correct/len(testing)
 
 
 x=Eigenfaces()
