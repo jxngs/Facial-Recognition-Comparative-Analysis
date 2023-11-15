@@ -94,7 +94,7 @@ class Eigenfaces:
 
     def train(self, k, metric):
         training, testing = getData()
-        
+    
         for ind,trainingpoint in enumerate(training):
             training[ind][0]=self.get_Histogram(trainingpoint[0])
         correct=0
