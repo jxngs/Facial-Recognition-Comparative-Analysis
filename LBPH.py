@@ -84,7 +84,7 @@ class Eigenfaces:
     def knn(self, testhist, k, metric):
         heap = []
         for ind,traininghist in enumerate(self.traininghists):
-            dist = self.distance(testhist, traininghist[0], metric)
+            dist = self.distance(testhist, traininghist[1], metric)
             if len(heap)<k:
                 heappush(heap,(-dist,ind))
             else:
@@ -92,20 +92,18 @@ class Eigenfaces:
         heap.sort()
         return heap
 
-    def train(self, k, metric):
-        training, testing = getData()
-    
+    def train(self, training, testing, k, metric):
         for ind,trainingpoint in enumerate(training):
-            training[ind][0]=self.get_Histogram(trainingpoint[0])
+            training[ind][1]=self.get_Histogram(trainingpoint[1])
         correct=0
         for ind,testingpoint in enumerate(testing):
-            testing[ind][0] = self.get_Histogram(testingpoint)
-            nearest_neighbors = self.knn(testing[ind][0], k, metric)
+            testing[ind][1] = self.get_Histogram(testingpoint)
+            nearest_neighbors = self.knn(testing[ind][1], k, metric)
             freqs={}
             for neighbor in nearest_neighbors:
-                if neighbor not in freqs:
-                    freqs[neighbor]=0
-                freqs[neighbor]=freqs[neighbor]+1
+                if training[neighbor][0] not in freqs:
+                    freqs[training[neighbor][0]]=0
+                freqs[training[neighbor][0]]=freqs[training[neighbor][0]]+1
             maxkey,maxval="",0
             for k,v in freqs.items():
                 if v>maxval:
@@ -113,11 +111,13 @@ class Eigenfaces:
                     maxkey=k
             conf_measure = maxval/k
             testing[ind] = [self.get_Histogram(testingpoint), maxval, maxkey, conf_measure]
-            if maxkey==testing[ind][1]:
+            if maxkey==testing[ind][0]:
                 correct+=1
             print("Classified As " + maxkey)
         return correct/len(testing)
 
-
-x=Eigenfaces()
-
+    def cv(self, partitions, k, metric):
+        for partition in partitions:
+            training = [x for x in partitions if x!=partition]
+            testing = partition
+            print(self.train(training,testing,k,metric))
