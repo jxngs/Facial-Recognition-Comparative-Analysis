@@ -9,7 +9,7 @@ import io
 class Fisherfaces:
 
     def __init__(self, images, labels, num_features):
-            self.images, self.labels = images, labels
+            self.images, self.labels = np.array([img.reshape(num_features, num_features) for img in images]), np.array(labels)
             self.classes = list(set(labels))
             self.num_features = num_features
             self.fisherfaces, self.mean_face, self.class_means, self.basis = self.compute_fisherfaces(self.images, self.labels)
@@ -28,6 +28,7 @@ class Fisherfaces:
         
     def compute_fisherfaces(self, images, labels):
         n = len(images)
+        print(images.shape)
         # class means
         unique_labels = list(set(labels))
         class_means = []
@@ -42,11 +43,8 @@ class Fisherfaces:
         
         # class means and mean_all are correct
 
-        for i, c in enumerate(class_means):
-            self.save_face(c, 'class' + str(i + 1) + '.jpeg')
-
         # normalize all images
-        X = np.array([image - mean_all for image in images])
+        X = np.array([image for image in images])
         
         Sw = np.zeros((self.num_features, self.num_features)) # within class
         Sb = np.zeros((self.num_features, self.num_features)) # between-class
@@ -62,7 +60,7 @@ class Fisherfaces:
                 Sw += np.dot((class_sample - class_means[i]).T, (class_sample - class_means[i]))
 
             # Between-class scatter matrix
-            Sb +=  np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
+            Sb +=  len(class_samples) * np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
 
         # create projection, W, that maximizes class separability criterion
         
@@ -71,7 +69,15 @@ class Fisherfaces:
         eigenvalues = eigenvalues[sort]
         eigenvectors = eigenvectors[:, sort]
 
-        return eigenvectors, mean_all, np.dot(class_means, eigenvectors), eigenvalues
+        # class_means = np.dot(class_means, eigenvectors)
+
+        class_means = np.dot(class_means, eigenvectors)
+        for i, c in enumerate(class_means):
+            self.save_face(c, 'class' + str(i + 1) + '.jpeg')
+
+
+        # self.fisherfaces, self.mean_face, self.class_means, self.basis
+        return eigenvectors, mean_all, class_means, eigenvalues
 
     def convert_bin(self, filename):
         with open(filename, 'rb') as file:
@@ -100,6 +106,36 @@ class Fisherfaces:
 
             return greyscale_mat
         
+    def predict_with_fisher(self, ff, image):
+        projection = np.dot(image, ff) 
+
+        base_filepath = './altered_images'
+        class_means = []
+        names = []
+        for class_name in os.listdir(base_filepath):
+            if class_name == 'proj' or class_name == 'class0.jpeg': continue
+            filepath = base_filepath + '/' + class_name
+            # get the image files from each folder
+            names.append(class_name)
+            image = ImageOps.grayscale(Image.open(filepath))
+            class_means.append(np.resize(np.array(image), (self.num_features, self.num_features)))
+
+        distances = []
+        for c in class_means:
+            distances.append(np.linalg.norm(projection - np.resize(c, (self.num_features, self.num_features))))
+        distances = np.array(distances)
+       
+        predicted_label = np.argmin(distances)
+        distance = distances[predicted_label]
+        #print(distances)
+        smallest_indexes = sorted(range(len(distances)), key=lambda i: distances[i])[:100]
+
+        return names[predicted_label], distance, np.array(names)[np.array(smallest_indexes)], np.array(distances)[np.array(smallest_indexes)]
+
+
+
+
+
     def predict(self, filename, img_type):
         image = None
         if img_type == 'jpeg': image = self.convert_jpeg(filename)

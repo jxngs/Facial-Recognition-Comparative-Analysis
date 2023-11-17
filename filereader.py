@@ -12,17 +12,20 @@ class FileReader:
 
     # should pass in './lfw-deepfunneled' into this method to get the correct images
     @staticmethod 
-    def readFilesToVectors(base_filepath):
+    def readFilesToVectors(base_filepath, threshold=None):
         names = []
         image_vectors = []
 
         # loop through folders in the image dataset
         for person_name in os.listdir(base_filepath):
+            count = 0
+
             if str(person_name).startswith('.'):
                 continue
             filepath = base_filepath + '/' + person_name
             # get the image files from each folder
             for filename in os.listdir(filepath):
+                if threshold and count > threshold: break
                 # add person's name to the list of names for each image
                 names.append(person_name)
 
@@ -37,6 +40,7 @@ class FileReader:
                     greyscale[i] = 0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]
                 
                 image_vectors.append(greyscale)
+                if threshold: count += 1
 
         return names, image_vectors
     
