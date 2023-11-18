@@ -12,7 +12,7 @@ class FileReader:
 
     # should pass in './lfw-deepfunneled' into this method to get the correct images
     @staticmethod 
-    def readFilesToVectors(base_filepath, threshold=None):
+    def readFilesToVectors(base_filepath, num=IMAGE_HEIGHT, threshold=None):
         names = []
         image_vectors = []
 
@@ -30,9 +30,9 @@ class FileReader:
                 names.append(person_name)
 
                 # open and process image
-                image = Image.open(filepath + '/' + filename).resize((IMAGE_HEIGHT,IMAGE_WIDTH))
+                image = Image.open(filepath + '/' + filename).resize((num,num))
                 pixels = list(image.getdata())
-                greyscale = np.zeros(IMAGE_WIDTH * IMAGE_HEIGHT)
+                greyscale = np.zeros(num * num)
 
                 for i in range(len(pixels)):
                     rgb = pixels[i]
