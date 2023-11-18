@@ -1,3 +1,4 @@
+from nis import match
 import os
 import numpy as np
 from PIL import Image, ImageOps
@@ -15,15 +16,15 @@ class Fisherfaces:
             self.fisherfaces, self.mean_face, self.class_means, self.basis = self.compute_fisherfaces(self.images, self.labels)
             
 
-    def normalize(self, matrix, mean_all):    
-        return matrix 
+    def normalize(self, matrix, mean_all):
+        
     
         # return normalized image
         min_val = np.min(mean_all)
         max_val = np.max(mean_all)
     
         normalized_matrix = 255 * (matrix - min_val) / (max_val - min_val)
-    
+
         return normalized_matrix
         
     def compute_fisherfaces(self, images, labels):
@@ -32,15 +33,17 @@ class Fisherfaces:
         # class means
         unique_labels = list(set(labels))
         class_means = []
+        labels = np.array(labels)
         for i in range(len(unique_labels)):
             label = unique_labels[i]
-            class_samples = images[np.array(labels) == label] # each c
+            matching_indexes = np.where(labels == label)[0]
+            class_samples = images[matching_indexes] # each c
             class_mean = np.mean(class_samples, axis=0)
             class_means.append(class_mean)
+            self.save_face(class_mean, 'class' + label + '.jpeg')
 
         class_means = np.array(class_means)
         mean_all = np.mean(class_means, axis=0)
-        
         # class means and mean_all are correct
 
         # normalize all images
@@ -53,7 +56,7 @@ class Fisherfaces:
         # c is each label
         for i in range(len(unique_labels)):
             label = unique_labels[i]
-            class_samples = X[np.array(labels) == label] # each c
+            class_samples = X[labels == label] # each c
             
             # Within-class scatter matrix
             for class_sample in class_samples:
@@ -86,7 +89,6 @@ class Fisherfaces:
             image = Image.open(io.BytesIO(binary_data))
             resized_image =  image.resize((self.num_features,self.num_features))
             return np.array(resized_image)
-
     
     def convert_jpeg(self, filename):
             image = Image.open(filename)
@@ -153,6 +155,7 @@ class Fisherfaces:
         distances = np.array(distances)
        
         predicted_label = np.argmin(distances)
+
         distance = distances[predicted_label]
         return self.classes[predicted_label], distance        
 
@@ -160,7 +163,21 @@ class Fisherfaces:
         return self.fisherfaces
 
     def save_face(self, matrix, filename):
-        plt.imsave('altered_images/'+filename, matrix, cmap='gray')
+         plt.imsave('altered_images/'+filename, matrix)
     
 
    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
