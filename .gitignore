@@ -1,2 +1,3 @@
 __pycache__
 altered_images
+*.keras
