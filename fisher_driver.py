@@ -1,7 +1,7 @@
 
 import numpy as np
 from sklearn import datasets
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay
 import cv2
 import matplotlib.pyplot as plt
 
@@ -66,4 +66,4 @@ def fisher_runner(NUM_FEATURES):
     plt.show()
 
 
-fisher_runner(40)
+#fisher_runner(40)
