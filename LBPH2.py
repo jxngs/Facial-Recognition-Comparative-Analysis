@@ -1,11 +1,9 @@
-import enum
-import os
+
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from heapq import *
-from filereader import *
-import json
+
 
 class LBPH2:
     
