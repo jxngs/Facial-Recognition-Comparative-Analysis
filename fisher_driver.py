@@ -1,7 +1,10 @@
 
 import numpy as np
 from sklearn import datasets
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import cv2
+import matplotlib.pyplot as plt
+
 from fisherfaces import Fisherfaces
 def fisher_runner(NUM_FEATURES):
     face_dataset = datasets.fetch_lfw_people(min_faces_per_person=50)
@@ -24,6 +27,7 @@ def fisher_runner(NUM_FEATURES):
     labels = np.asarray(kept_labels)
 
     labeldict = {i: name for i, name in enumerate(face_dataset.target_names)}
+    reversedict = {name:i for i,name in enumerate(face_dataset.target_names)}
     labelnames = []
     for i in range(len(labels)):
         labelnames.append(labeldict[labels[i]])
@@ -44,12 +48,22 @@ def fisher_runner(NUM_FEATURES):
     y_actual = labelnames[indices[cut:]]
     f = Fisherfaces(X_train, y_train, NUM_FEATURES)
 
+    conf_matrix = np.zeros((len(reversedict), len(reversedict)))
+
     accuracy = 0
     for x,y in zip(X_test, y_actual):
         
         pred = f.predict(x)
         print('pred', y, pred)
+        conf_matrix[reversedict[y], reversedict[pred[0]]] += 1
+
         if y == pred[0]: accuracy += 1
     print('accuracy', accuracy/len(X_test))
+    display_labels = [labeldict[i] for i in range(len(reversedict))]
+    display = ConfusionMatrixDisplay(conf_matrix, display_labels=display_labels)
+    display.plot(xticks_rotation="vertical")
+    plt.tight_layout()
+    plt.show()
+
 
 fisher_runner(40)
