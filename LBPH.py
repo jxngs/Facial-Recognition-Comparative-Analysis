@@ -5,21 +5,34 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from heapq import *
 from filereader import *
-
+import json
 
 class LBPH:
     
-    def __init__(self,k):
+    def __init__(self,k, size, images=[], names=[]):
         self.k=k
-        if os.path.exists("imagevectors.npy") and os.path.exists("names.json"):
+        self.size = size
+        if len(images) != 0:
+            images = [vector.reshape((size, size)) for vector in images]
+            self.cv(names,images,"EuclideanDistance")
+        elif os.path.exists("imagevectors.npy") and os.path.exists("names.json"):
             json_filename = "names.json"
             with open(json_filename, 'r') as json_file:
                 names = json.load(json_file)
             images = np.load("imagevectors.npy")
         else:
             names, images = FileReader.readFilesToVectors('/Users/noahloewy/Documents/Facial-Recognition-Comparative-Analysis/__pycache__/Try')
-        images = [vector.reshape((100, 100)) for vector in images]
+        images = [vector.reshape((size, size)) for vector in images]
         self.cv(names,images,"EuclideanDistance")
+
+    def getRNeighbors(self, mat, r, c, radius):
+        arr = []
+        for i in range(r - radius, r + radius + 1):
+            if i not in range(self.size): continue
+            for j in range(c - radius, c + radius + 1):
+                if j not in range(self.size): continue
+                arr.append(mat[i][j])
+        return np.array(arr)
         
     def getNeighbors(self, mat, r, c):
         if r<=0 or c<=0 or r>=len(mat)-1 or c>=len(mat[0])-1:
@@ -41,7 +54,8 @@ class LBPH:
         for r in range(1,M-1):
             for c in range(1,N-1):
                 pixel_threshold = grayscaled_mat[r][c]
-                neighbors = self.getNeighbors(grayscaled_mat,r,c)
+               # neighbors = self.getNeighbors(grayscaled_mat,r,c)
+                neighbors = self.getRNeighbors(grayscaled_mat, r, c, 3)
                 above_thresh = neighbors >= pixel_threshold
                 lbp_rc = np.sum(above_thresh * (2 ** np.arange(len(neighbors))))
                 lbp_matrix[r, c] = lbp_rc
@@ -56,11 +70,13 @@ class LBPH:
 
     def get_Histogram(self, grayscaled_mat, name, show_hist=False): 
         lbp_mat = self.get_LBP_Mat(grayscaled_mat)
+        #plt.imsave('altered_images/lbp'+name+".jpeg", lbp_mat)
         lbp_values = lbp_mat.flatten()
         histogram = np.histogram(lbp_values, bins=256, range=(0, 256))
         if show_hist:
             self.show_histogram(histogram, name)
         return histogram[0]
+       
     
     def distance(self,vector1, vector2, metric):
         if metric == "ChiSquare":
@@ -91,19 +107,39 @@ class LBPH:
                 heappushpop(heap, (-dist,person))
         heap.sort()
         return heap
+    
+    def mean_knn(self, testpoint, training, metric):
+        mp = {}
+        heap = []
+        for person, point in training:
+            mp.setdefault(person, [])
+            mp[person].append(self.distance(testpoint[1], point[1], metric))
+        avg = {person:np.mean(np.array(mp[person])) for person in mp.keys()}
+        heap = [] 
+
+        for person in avg.keys():
+            dist = avg[person]  
+            print(testpoint[0], person, dist)
+            if len(heap)<self.k:
+                heappush(heap,(-dist,person))
+            else:
+                heappushpop(heap, (-dist,person))
+        heap.sort()
+        return heap
 
     def test(self, training, testing, metric):
         correct=0
         for ind,testingpoint in enumerate(testing):
-            nearest_neighbors = self.knn(testingpoint, training, metric)
+            nearest_neighbors = self.mean_knn(testingpoint, training, metric)
+            #nearest_neighbors = self.knn(testingpoint, training, metric)
             freqs={}
             for neighbor in nearest_neighbors:
                 if neighbor[1] not in freqs:
                     freqs[neighbor[1]]=0
                 freqs[neighbor[1]]=freqs[neighbor[1]]+1
-            maxkey,maxval="",0
+            maxkey,maxval="",float('inf')
             for k,v in freqs.items():
-                if v>maxval:
+                if v<maxval:
                     maxval=v
                     maxkey=k
             conf_measure = maxval/v
@@ -117,10 +153,12 @@ class LBPH:
             images[ind]=self.get_Histogram(trainingpoint,names[ind])
             if ind%10==0:
                 print(str(100*ind/len(images)) + "%")
+        print(images)
         return images
     
     def cv(self, names, images, metric):
-        images, names  = images[:200], names[:200]
+        #images, names  = images[:200], names[:200]
+        images, names  = images, names
         images = self.trainAll(images,names)
         partitions = FileReader.getCrossValidationGroups(names, images)
         for i in range(len(partitions)):
@@ -132,4 +170,6 @@ class LBPH:
                     training=training+partitions[j]
             testing = partitions[i]
             print("Accuracy : " + str(self.test(training,testing,metric)))
-x=LBPH(k = 1)
+
+
+# x=LBPH(k = 1)
