@@ -1,0 +1,344 @@
+import numpy as np
+from sklearn import datasets
+from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
+import cv2
+import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
+
+
+class FacialRecognitionAlgorithm:
+    def __init__(self, modelname, dataset):
+        self.modelname = modelname
+        self.dataset=dataset
+
+    def train(self):
+        pass
+
+    def predict(self):
+        pass
+
+class Eigenfaces(FacialRecognitionAlgorithm):
+
+    class PrincipalComponentsAnalysis:
+        def __init__(self, n_components):
+            self.n_components = n_components
+            self.mean = None
+            self.components = None
+            self.explained_variances = None
+
+        def fit(self, X):
+            self.mean = np.mean(X, axis=0)
+            centered_data = X - self.mean
+            covariance_matrix = np.cov(centered_data, rowvar=False)
+            eigendata = np.linalg.eigh(covariance_matrix)
+            eigenvalues = eigendata[0]
+            eigenvectors = eigendata[1]
+            sorted_indices = np.argsort(eigenvalues)[::-1]
+            eigenvectors = eigenvectors[:, sorted_indices]
+            self.components = eigenvectors[:, :self.n_components]
+            total_variance = np.sum(eigenvalues)
+            self.explained_variances = eigenvalues[sorted_indices][:self.n_components] / total_variance
+
+        def transform(self, X):
+            centered_data = X - self.mean
+            projected_data = np.dot(centered_data, self.components)
+            whitened_data = projected_data / np.sqrt(self.explained_variances)
+            return whitened_data
+
+
+    def __init__(self, modelname, ncomponents, dataset):
+        self.n_components=ncomponents
+        super().__init__(modelname, dataset)
+        
+    def train(self):
+        self.X_train = self.X_train.reshape((len(self.X_train), -1))
+        self.X_test = self.X_test.reshape((len(self.X_test), -1))
+
+        custom_pca = self.PrincipalComponentsAnalysis(n_components=self.n_components)
+        custom_pca.fit(self.X_train)
+
+        self.X_training_reduced = custom_pca.transform(self.X_train)
+        self.X_test_reduced = custom_pca.transform(self.X_test)
+
+    def predict(self):
+        bestacc=0
+        for i in range(5):
+            C=10**i
+            classifier = SVC(kernel='linear', C=1)
+            classifier.fit(self.X_training_reduced, self.y_train)
+            self.y_predicted = classifier.predict(self.X_test_reduced)
+            accuracy = accuracy_score(self.y_actual, y_predicted)
+            if accuracy>bestacc:
+                bestC = C
+                bestacc = accuracy
+
+        self.classifier = SVC(kernel='linear', C=bestC)
+        self.classifier.fit(self.X_training_reduced, self.y_train)
+        y_predicted = self.classifier.predict(self.X_test_reduced)
+        self.accuracy = accuracy_score(self.y_actual, y_predicted)
+    
+    def show_results(self):
+        print(self.accuracy)
+        ConfusionMatrixDisplay.from_estimator(
+            self.classifier, self.X_test_reduced, self.y_actual, xticks_rotation="vertical"
+        )
+        plt.tight_layout()
+        plt.show()
+
+
+class FisherFaces(FacialRecognitionAlgorithm):
+    def __init__(self, modelname, num_features, dataset):
+        super().__init__(modelname, dataset)
+        
+        self.num_features = min(num_features, min(dataset.images[0].shape))
+        
+
+    def normalize(self, matrix, mean_all):
+        min_val = np.min(mean_all)
+        max_val = np.max(mean_all)
+        normalized_matrix = 255 * (matrix - min_val) / (max_val - min_val)
+        return normalized_matrix
+
+    def train(self):
+        n = len(self.X_train)
+        unique_labels = list(set(self.y_train))
+        self.classes = unique_labels
+        class_means = []
+
+        for i in range(len(unique_labels)):
+            label = unique_labels[i]
+            matching_indexes = np.where(self.y_train == label)[0]
+            class_samples = self.X_train[matching_indexes]  # each c
+            class_mean = np.mean(class_samples, axis=0)
+            class_means.append(class_mean)
+            
+        class_means = np.array(class_means)
+        mean_all = np.mean(class_means, axis=0)
+
+        X = np.array([image for image in self.X_train])
+
+        Sw = np.zeros((self.num_features, self.num_features))  # within class
+        Sb = np.zeros((self.num_features, self.num_features))  # between-class
+
+        for i in range(len(unique_labels)):
+            label = unique_labels[i]
+            class_samples = X[self.y_train == label]  # each c
+
+            for class_sample in class_samples:
+                Sw += np.dot((class_sample - class_means[i]).T, (class_sample - class_means[i]))
+
+            Sb += len(class_samples) * np.dot((class_means[i] - mean_all), (class_means[i] - mean_all).T)
+
+        eigenvalues, eigenvectors = np.linalg.eig(np.dot(np.linalg.inv(Sw), (Sb)))
+        sort = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[sort]
+        eigenvectors = eigenvectors[:, sort]
+
+        class_means = np.dot(class_means, eigenvectors)
+
+        self.fisherfaces = eigenvectors
+        self.mean_face = mean_all
+        self.class_means = class_means
+        self.basis = eigenvalues
+
+    def convert_bin(self, filename):
+        with open(filename, 'rb') as file:
+            binary_data = file.read()
+            image = Image.open(io.BytesIO(binary_data))
+            resized_image = image.resize((self.num_features, self.num_features))
+            return np.array(resized_image)
+
+    def convert_jpeg(self, filename):
+        image = Image.open(filename)
+        resized_image = image.resize((self.num_features, self.num_features))
+
+        pixel_data = list(resized_image.getdata())
+        greyscale_data = [0 for x in range(self.num_features * self.num_features)]
+
+        for i in range(len(pixel_data)):
+            rgb = pixel_data[i]
+            greyscale_data[i] = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
+
+        greyscale_data = np.asarray(greyscale_data)
+        greyscale_mat = greyscale_data.reshape(self.num_features, self.num_features)
+
+        return greyscale_mat
+
+    def predict_with_fisher(self, ff, image):
+        projection = np.dot(image, ff)
+
+        base_filepath = './altered_images'
+        class_means = []
+        names = []
+        for class_name in os.listdir(base_filepath):
+            if class_name == 'proj' or class_name == 'class0.jpeg':
+                continue
+            filepath = base_filepath + '/' + class_name
+            names.append(class_name)
+            image = ImageOps.grayscale(Image.open(filepath))
+            class_means.append(np.resize(np.array(image), (self.num_features, self.num_features)))
+
+        distances = []
+        for c in class_means:
+            distances.append(np.linalg.norm(projection - np.resize(c, (self.num_features, self.num_features))))
+        distances = np.array(distances)
+
+        predicted_label = np.argmin(distances)
+        distance = distances[predicted_label]
+        smallest_indexes = sorted(range(len(distances)), key=lambda i: distances[i])[:100]
+
+        return names[predicted_label], distance, np.array(names)[np.array(smallest_indexes)], np.array(distances)[
+            np.array(smallest_indexes)]
+
+    def predict(self):
+        def predict1(image):
+            projection = np.dot(image, self.fisherfaces)
+
+            distances = []
+            for c in self.class_means:
+                distances.append(np.linalg.norm(projection - c))
+            distances = np.array(distances)
+
+            predicted_label = np.argmin(distances)
+
+            distance = distances[predicted_label]
+            return self.classes[predicted_label], distance
+        self.accuracy = 0
+        self.conf_matrix = np.zeros((len(self.dataset.labeldict), len(self.dataset.labeldict)))
+        self.y_predicted=[]
+        for x,y in zip(self.X_test, self.y_actual):
+            
+            pred = predict1(x)
+            print('pred', y, pred)
+        
+            
+            try:
+                self.conf_matrix[self.dataset.reversedict[y], self.dataset.reversedict[pred[0]]] += 1
+            except:
+                self.conf_matrix[y, pred[0]] += 1
+            self.y_predicted.append(pred[0])
+            if y == pred[0]: self.accuracy += 1
+        
+        print('accuracy', self.accuracy/len(self.X_test))
+        
+    def show_results(self):
+        conf_matrix = confusion_matrix(self.y_actual, np.asarray(self.y_predicted), labels=self.classes)
+        
+        plt.imshow(conf_matrix, interpolation='nearest')
+        plt.title('Confusion Matrix')
+        plt.colorbar()
+
+        tick_marks = np.arange(len(self.classes))
+        plt.xticks(tick_marks, self.classes, rotation=45)
+        plt.yticks(tick_marks, self.classes)
+
+        for i in range(conf_matrix.shape[0]):
+            for j in range(conf_matrix.shape[1]):
+                plt.text(j, i, format(conf_matrix[i, j],  'd'),
+                        ha="center", va="center",
+                        color="black")
+
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
+        plt.tight_layout()
+        plt.show()
+
+class CNN(FacialRecognitionAlgorithm):
+    def __init__(self, model):
+        super().__init__(model)
+
+    def train(self):
+        pass
+
+    def predict(self):
+        pass
+
+
+class LBPH(FacialRecognitionAlgorithm):
+    def __init__(self, model):
+        super().__init__(model)
+
+    def train(self):
+        pass
+
+    def predict(self):
+        pass
+
+
+class DatasetLoader:
+
+    def load_data(self):
+        # Implement the logic to load data from a specific dataset
+        pass
+
+    def split_data(self, prop):
+        np.random.seed(18)
+        np.random.shuffle(self.indices)
+
+        cut = int((1 - prop) * len(self.images))//1
+
+        X_train =  self.images[self.indices[:cut]]
+        X_test = self.images[self.indices[cut:]]
+
+        y_train = self.labelnames[self.indices[:cut]]
+        y_actual = self.labelnames[self.indices[cut:]]
+        
+        return X_train, X_test, y_train, y_actual
+
+
+class LFW(DatasetLoader):
+
+    def load_data(self, minimages, maximages, isFisher, IMAGE_SIZE=100):
+
+        
+        face_dataset = datasets.fetch_lfw_people(min_faces_per_person=minimages)
+        if isFisher:
+            IMAGE_SIZE = min(IMAGE_SIZE, min(face_dataset.images[0].shape))
+
+        face_dataset.images = [cv2.resize(image, (IMAGE_SIZE, IMAGE_SIZE)) for image in face_dataset.images]
+        
+        kept_images = []
+        kept_labels = []
+        frequencies = {}
+
+        for image, label in zip(face_dataset.images, face_dataset.target):
+            if label not in frequencies:
+                frequencies[label] = 0
+            if frequencies[label] > maximages:
+                continue
+            kept_images.append(image)
+            kept_labels.append(label)
+            frequencies[label] += 1
+
+        self.images = np.array([vector.reshape((IMAGE_SIZE, IMAGE_SIZE)) for vector in kept_images])
+        self.labels = np.asarray(kept_labels)
+
+        self.labeldict = {i: name for i, name in enumerate(face_dataset.target_names)}
+        self.reversedict = {name: i for i, name in enumerate(face_dataset.target_names)}
+        labelnames = []
+        for i in range(len(self.labels)):
+            labelnames.append(self.labeldict[self.labels[i]])
+
+        self.labelnames = np.asarray(labelnames)
+
+        self.indices = np.arange(len(self.images))
+    
+    def split_data(self, prop=.25):
+        return super().split_data(prop)
+
+
+minimages = 50
+maximages = 150
+num_features = 40
+datasettype="LFW"
+modeltype="Fisherfaces"
+if datasettype == "LFW":
+    dataset = LFW()
+    dataset.load_data(minimages,maximages, modeltype=="Fisherfaces", IMAGE_SIZE = num_features)
+e=FisherFaces(modeltype, num_features, dataset)
+e.X_train, e.X_test, e.y_train, e.y_actual = e.dataset.split_data()
+e.train()
+e.predict()
+e.show_results()
