@@ -18,9 +18,10 @@ import io
 from PIL import Image
 
 class FacialRecognitionAlgorithm:
-    def __init__(self, modelname, dataset):
+    def __init__(self, modelname, dataset, cross_sectional=None):
         self.modelname = modelname
         self.dataset=dataset
+        self.cross_sectional = cross_sectional
 
     def train(self):
         pass
@@ -29,6 +30,9 @@ class FacialRecognitionAlgorithm:
         pass
 
     def show_results(self):
+        pass
+
+    def print_cross_sectional(self):
         pass
 
 class Eigenfaces(FacialRecognitionAlgorithm):
@@ -60,10 +64,10 @@ class Eigenfaces(FacialRecognitionAlgorithm):
             return whitened_data
 
 
-    def __init__(self, modelname, dataset, num_features,c_value):
+    def __init__(self, modelname, dataset, num_features,c_value, cross_sectional=None):
         self.n_components=num_features
         self.C=c_value
-        super().__init__(modelname, dataset)
+        super().__init__(modelname, dataset, cross_sectional)
         
     def train(self):
         self.X_train = self.X_train.reshape((len(self.X_train), -1))
@@ -82,7 +86,7 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         self.classifier.fit(self.X_training_reduced, self.y_train)
         self.y_predicted = self.classifier.predict(self.X_test_reduced)
         self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
-        
+
     def show_results(self):
         print(self.accuracy)
         ConfusionMatrixDisplay.from_estimator(
@@ -91,13 +95,13 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         plt.tight_layout()
         plt.show()
 
+    def print_cross_sectional(self):
+        return
 
 class FisherFaces(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, dataset, num_features):
-        super().__init__(modelname, dataset)
-        
+    def __init__(self, modelname, dataset, num_features, cross_sectional=None):
+        super().__init__(modelname, dataset, cross_sectional)
         self.num_features = min(num_features, min(dataset.images[0].shape))
-        
 
     def normalize(self, matrix, mean_all):
         min_val = np.min(mean_all)
@@ -200,8 +204,8 @@ class FisherFaces(FacialRecognitionAlgorithm):
         plt.show()
 
 class CNN(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, dataset, epochs = 100):
-        super().__init__(modelname, dataset)
+    def __init__(self, modelname, dataset, epochs = 100, cross_sectional=None):
+        super().__init__(modelname, dataset, cross_sectional)
         self.epochs=epochs
         
     def train(self):
@@ -332,8 +336,8 @@ class CNN(FacialRecognitionAlgorithm):
  
      
 class LBPH(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, dataset,num_features, metric, radius=1):
-        super().__init__(modelname,dataset)
+    def __init__(self, modelname, dataset,num_features, metric, radius=1, cross_sectional=None):
+        super().__init__(modelname,dataset, cross_sectional)
         self.size = num_features
         self.metric = metric
         self.radius=radius
