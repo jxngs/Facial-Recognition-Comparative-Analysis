@@ -18,10 +18,9 @@ import io
 from PIL import Image
 
 class FacialRecognitionAlgorithm:
-    def __init__(self, modelname, dataset, cross_sectional=None):
+    def __init__(self, modelname, dataset):
         self.modelname = modelname
         self.dataset=dataset
-        self.cross_sectional = cross_sectional
 
     def train(self):
         pass
@@ -64,10 +63,10 @@ class Eigenfaces(FacialRecognitionAlgorithm):
             return whitened_data
 
 
-    def __init__(self, modelname, dataset, num_features,c_value, cross_sectional=None):
+    def __init__(self, modelname, dataset, num_features,c_value):
         self.n_components=num_features
         self.C=c_value
-        super().__init__(modelname, dataset, cross_sectional)
+        super().__init__(modelname, dataset)
         
     def train(self):
         self.X_train = self.X_train.reshape((len(self.X_train), -1))
@@ -86,9 +85,11 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         self.classifier.fit(self.X_training_reduced, self.y_train)
         self.y_predicted = self.classifier.predict(self.X_test_reduced)
         self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
+        print(self.y_actual)
 
     def show_results(self):
         print(self.accuracy)
+        self.print_cross_sectional()
         ConfusionMatrixDisplay.from_estimator(
             self.classifier, self.X_test_reduced, self.y_actual, xticks_rotation="vertical"
         )
@@ -96,11 +97,25 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         plt.show()
 
     def print_cross_sectional(self):
-        return
+        self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
+        self.demographic_accuracy = {}
+        # split self.y_actual into groups
+        for i, person in enumerate(self.y_actual):
+            demo_group = self.dataset.labels_to_demographics[person]
+            self.demographic_accuracy.setdefault(demo_group, [])
+            if person == self.y_predicted[i]:
+                self.demographic_accuracy[demo_group].append(1)
+            else:
+                self.demographic_accuracy[demo_group].append(0)
+        
+        for demographic in self.demographic_accuracy.keys():
+            res = self.demographic_accuracy[demographic]
+            if len(res) > 0:
+                print(demographic, sum(res)/len(res))
 
 class FisherFaces(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, dataset, num_features, cross_sectional=None):
-        super().__init__(modelname, dataset, cross_sectional)
+    def __init__(self, modelname, dataset, num_features):
+        super().__init__(modelname, dataset)
         self.num_features = min(num_features, min(dataset.images[0].shape))
 
     def normalize(self, matrix, mean_all):
@@ -204,8 +219,8 @@ class FisherFaces(FacialRecognitionAlgorithm):
         plt.show()
 
 class CNN(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, dataset, epochs = 100, cross_sectional=None):
-        super().__init__(modelname, dataset, cross_sectional)
+    def __init__(self, modelname, dataset, epochs = 100):
+        super().__init__(modelname, dataset)
         self.epochs=epochs
         
     def train(self):
@@ -336,8 +351,8 @@ class CNN(FacialRecognitionAlgorithm):
  
      
 class LBPH(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, dataset,num_features, metric, radius=1, cross_sectional=None):
-        super().__init__(modelname,dataset, cross_sectional)
+    def __init__(self, modelname, dataset,num_features, metric, radius=1):
+        super().__init__(modelname,dataset)
         self.size = num_features
         self.metric = metric
         self.radius=radius
@@ -510,21 +525,15 @@ class BFW_Probabilistic(DatasetLoader):
         if probabilities is None:
             probabilities = {}
 
-        max_proportion = max(probabilities.values()) if probabilities else 100
-        max_proportion_number = 10
-        if max_proportion_number != 100:
-            print(f"Warning: Leaving some people out of dataset (only using {max_proportion_number / 100 * 100}% for highest group)")
-
         for category in categories:
             people = [folder for folder in os.scandir(category.path) if folder.name != '.DS_Store']
             demographic = category.name
-            demographic_probability = (probabilities[demographic] if demographic in probabilities else max_proportion)/max_proportion
-            demographic_number = round(max_proportion_number * demographic_probability)
-            print(f"Demographic {demographic} has {demographic_number} people selected")
-            selected_people = random.sample(people, demographic_number)
-            for person in selected_people:
+            demographic_probability = probabilities[demographic] if demographic in probabilities else 1
+            for person in people[:1]:
                 name = person.name
                 person_images = [file for file in os.scandir(person.path) if file.name != '.DS_Store']
+                if random.random() > demographic_probability:
+                    continue
                 for image in person_images:
                     images.append(self.read_image(image, num_features, num_features))
                     names.append(name)
@@ -536,7 +545,11 @@ class BFW_Probabilistic(DatasetLoader):
         self.indices = np.arange(len(self.images))
         self.labels_to_numbers = {name: i for i, name in enumerate(set(names))}
         self.numbers_to_labels = {i: name for name, i in self.labels_to_numbers.items()}
-        
+
+        self.labels_to_demographics = {names[i]: demo for i, demo in enumerate(demographics)}
+        # name : demographic
+        print(self.labels_to_demographics)
+
         if modeltype=="CNN":
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
             labels = keras.utils.to_categorical(np.asarray([self.labels_to_numbers[label] for label in self.labelnames]))
@@ -850,21 +863,13 @@ class MLApp(QWidget):
         #     "Indian": float(self.demographic_widgets[10].currentText()),
         #     "Asian": float(self.demographic_widgets[11].currentText())
         # }
-        Male = float(self.demographic_widgets[6].text())
-        Female = float(self.demographic_widgets[7].text())
-        White = float(self.demographic_widgets[8].text())
-        Black = float(self.demographic_widgets[9].text())
-        Indian = float(self.demographic_widgets[10].text())
-        Asian = float(self.demographic_widgets[11].text())
         self.probabilities = {
-            "asian_females": Asian * Female,
-            "black_females": Black * Female,
-            "indian_females": Indian * Female,
-            "white_females": White * Female,
-            "asian_males": Asian * Male,
-            "black_males": Black * Male,
-            "indian_males": Indian * Male,
-            "white_males": White * Male
+            "Male": float(self.demographic_widgets[6].text()),
+            "Female": float(self.demographic_widgets[7].text()),
+            "White": float(self.demographic_widgets[8].text()),
+            "Black": float(self.demographic_widgets[9].text()),
+            "Indian": float(self.demographic_widgets[10].text()),
+            "Asian": float(self.demographic_widgets[11].text())
         }
         return True
 
