@@ -331,58 +331,8 @@ class CNN(FacialRecognitionAlgorithm):
         plt.show()
 
 
-        def load_data(self, modeltype, num_features=100, prop=0.25):
-            face_dataset = datasets.fetch_lfw_people(min_faces_per_person=50)
-            self.target_names = face_dataset.target_names
-
-            if modeltype == 'Fisher':
-                num_features = min(num_features, min(face_dataset.images[0].shape))
-
-            if modeltype != 'CNN':
-                face_dataset.images = [cv2.resize(image, (num_features, num_features)) for image in face_dataset.images]
-
-            self.num_features = num_features
-            kept_images = []
-            kept_labels = []
-            frequencies = {}
-
-            for image, label in zip(face_dataset.images, face_dataset.target):
-                if label not in frequencies:
-                    frequencies[label] = 0
-                if frequencies[label] > 150:
-                    continue
-                kept_images.append(image)
-                kept_labels.append(label)
-                frequencies[label] += 1
-
-            if modeltype != 'CNN':
-                kept_images = np.array([vector.reshape((num_features, num_features)) for vector in kept_images])
-            self.labels = np.asarray(kept_labels)
-
-            self.numbers_to_labels = {i: name for i, name in enumerate(face_dataset.target_names)}
-            self.labels_to_numbers = {name: i for i, name in enumerate(face_dataset.target_names)}
-
-            labelnames = [self.numbers_to_labels[label] for label in self.labels]
-            self.labelnames = np.asarray(labelnames)
-
-            self.indices = np.arange(len(kept_images))
-            self.images = np.asarray(kept_images)
-
-            if modeltype == 'CNN':
-                images = np.expand_dims(np.asarray(kept_images), axis=-1)  # necessary to show there is 1 channel (grayscale)
-                labels = keras.utils.to_categorical(np.asarray(kept_labels), num_classes=len(self.target_names))
-
-                self.X_train, self.X_test, self.y_train, self.y_actual = train_test_split(
-                    images, labels, test_size=prop, random_state=18
-                )
-                
-            else:
-                print(self.images.shape)
-                self.X_train, self.X_test, self.y_train, self.y_actual = self.split_data()
-
-
-        def split_data(self, prop=.2):
-            return super().split_data(prop)
+        
+    
 
 class LBPH(FacialRecognitionAlgorithm):
     def __init__(self, modelname, dataset,num_features, metric, radius=1):
@@ -797,6 +747,18 @@ class MLApp(QWidget):
         self.clear_hyperparam_layout()
         if self.dataset_combo.currentText() == 'BFW Probabilistic':
             self.add_subset_proportion_widgets()
+        self.add_hyperparam_widget("Number of Features:", self.num_features_widget)
+        self.add_hyperparam_widget("Train/Test Split Proportion:", self.train_test_split_widget)
+        modeltype = self.algorithm_combo.currentText()
+        if modeltype == 'Eigenfaces':
+            self.num_features_widget.setText(str(150))
+            self.add_hyperparam_widget("C:", self.c_widget)
+        elif modeltype == 'Fisherfaces':
+            self.num_features_widget.setText(str(45))
+        elif modeltype == 'LBPH':
+            self.add_hyperparam_widget("Metric:", self.metric_widget)
+        elif modeltype == 'CNN':
+            self.add_hyperparam_widget("Epochs:", self.epochs_widget)
     def add_subset_proportion_widgets(self):
         self.men_subset_widget = QLineEdit()
         self.women_subset_widget = QLineEdit()
@@ -818,37 +780,17 @@ class MLApp(QWidget):
             self.white_subset_widget, self.black_subset_widget,
             self.indian_subset_widget, self.asian_subset_widget
         ]
-        modeltype = self.algorithm_combo.currentText()
-
-        # Common hyperparameters for all algorithms
-        self.add_hyperparam_widget("Number of Features:", self.num_features_widget)
-        self.add_hyperparam_widget("Train/Test Split Proportion:", self.train_test_split_widget)
-
-        if modeltype == 'Eigenfaces':
-            self.num_features_widget.setText(str(150))
-            self.add_hyperparam_widget("C:", self.c_widget)
-        elif modeltype == 'Fisherfaces':
-            self.num_features_widget.setText(str(45))
-        elif modeltype == 'LBPH':
-            self.add_hyperparam_widget("Metric:", self.metric_widget)
-        elif modeltype == 'CNN':
-            self.add_hyperparam_widget("Epochs:", self.epochs_widget)
 
     def validate_proportions(self):
         men_women_proportion = sum(float(widget.text()) for widget in self.subset_widgets[:2] if widget.text())
         others_proportion = sum(float(widget.text()) for widget in self.subset_widgets[2:] if widget.text())
         if men_women_proportion != 100.0 :
             QMessageBox.warning(self, "Invalid Proportions", "Men and Women must add up to 100.")
-            print(2)
             return False
         if others_proportion != 100.0:
             QMessageBox.warning(self, "Invalid Proportions", "Racial Groups must add up to 100.")
-            print(2)
             return False
-        print(3)
         return True
-
-        
 
     def add_hyperparam_widget(self, label_text, widget):
         label = QLabel(label_text)
@@ -911,8 +853,6 @@ class MLApp(QWidget):
             print(f"Distance Metric: {metric}")
         if modeltype == "CNN":
             print(f"# of Epochs: {epochs}")
-
-        print(3)
         f.X_train, f.X_test, f.y_train, f.y_actual = f.dataset.X_train, f.dataset.X_test, f.dataset.y_train, f.dataset.y_actual
         f.train()
         f.predict()
