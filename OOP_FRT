@@ -538,7 +538,7 @@ class BFW_Probabilistic(DatasetLoader):
         return self
         
 class BFW_Balanced(BFW_Probabilistic):
-    def load_data(self, modeltype, num_features=100, prop=0.2 ):
+    def load_data(self, modeltype, num_features=100, prop=0.2, probabilities=None):
         super().load_data(modeltype, num_features, prop, {})
         
         # self.images = s.images
