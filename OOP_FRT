@@ -31,22 +31,44 @@ class FacialRecognitionAlgorithm:
     def show_results(self):
         pass
 
-    def print_cross_sectional(self):
+    def print_cross_sectional(self, show=True):
         self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
         self.demographic_accuracy = {}
+        self.gender_accuracy = {}
+        self.race_accuracy = {}
         # split self.y_actual into groups
         for i, person in enumerate(self.y_actual):
+
             demo_group = self.dataset.labels_to_demographics[person]
+            race, gender = demo_group.split('_')
+
             self.demographic_accuracy.setdefault(demo_group, [])
-            if person == self.y_predicted[i]:
-                self.demographic_accuracy[demo_group].append(1)
-            else:
-                self.demographic_accuracy[demo_group].append(0)
-        
-        for demographic in self.demographic_accuracy.keys():
-            res = self.demographic_accuracy[demographic]
-            if len(res) > 0:
-                print(demographic, sum(res)/len(res))
+            self.race_accuracy.setdefault(race, [])
+            self.gender_accuracy.setdefault(gender, [])
+
+            num = 0
+            if person == self.y_predicted[i]: num = 1
+            self.demographic_accuracy[demo_group].append(num)
+            self.race_accuracy[race].append(num)
+            self.gender_accuracy[gender].append(num)
+
+        # race and gender
+        for demographic in self.race_accuracy.keys():
+                res = self.race_accuracy[demographic]
+                if len(res) > 0:
+                    print(demographic, sum(res)/len(res))
+
+        for demographic in self.gender_accuracy.keys():
+                res = self.gender_accuracy[demographic]
+                if len(res) > 0:
+                    print(demographic, sum(res)/len(res))
+
+        # cross sections
+        if show:
+            for demographic in self.demographic_accuracy.keys():
+                res = self.demographic_accuracy[demographic]
+                if len(res) > 0:
+                    print(demographic, sum(res)/len(res))
 
 class Eigenfaces(FacialRecognitionAlgorithm):
 
