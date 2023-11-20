@@ -24,6 +24,9 @@ class FacialRecognitionAlgorithm:
     def predict(self):
         pass
 
+    def show_results(self):
+        pass
+
 class Eigenfaces(FacialRecognitionAlgorithm):
 
     class PrincipalComponentsAnalysis:
@@ -395,11 +398,14 @@ class LBPH(FacialRecognitionAlgorithm):
 
 
 class DatasetLoader:
+    
+    #CREATED IN LOAD DATA : self.images, self.indices, self.labelnames, self.labeldict,self.reversedict, self.labels, self.target_names
+    #CREATED IN SPLIT DATA: self.X_train, self.X_test, self.y_train, self.y_actual
 
     def load_data(self):
         # Implement the logic to load data from a specific dataset
         pass
-
+        
     def split_data(self, prop):
         np.random.seed(18)
         np.random.shuffle(self.indices)
@@ -459,7 +465,7 @@ class LFW(DatasetLoader):
             images = np.expand_dims(np.asarray(kept_images), axis=-1) # necessary to show there is 1 channel (grayscale)?
             labels = keras.utils.to_categorical(np.asarray(kept_labels))
             print(images.shape)
-            self.X_train, self.X_test, self.y_train, self.y_actual = train_test_split(images, labels, test_size=0.2, random_state=42)
+            self.X_train, self.X_test, self.y_train, self.y_actual = train_test_split(images, labels, test_size=0.2, random_state=18)
        
         else:
             print(self.images.shape)
@@ -468,6 +474,8 @@ class LFW(DatasetLoader):
 
     def split_data(self, prop=.25):
         return super().split_data(prop)
+
+
 
 class MLApp(QWidget):
     def __init__(self):
