@@ -12,6 +12,11 @@ from tensorflow.keras import layers
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QComboBox, QPushButton, QVBoxLayout,QLineEdit,QFormLayout
 from heapq import *
+import os
+from PIL import Image
+from sklearn.preprocessing import LabelEncoder
+from keras.utils import to_categorical
+
 
 class FacialRecognitionAlgorithm:
     def __init__(self, modelname, dataset):
@@ -320,7 +325,7 @@ class CNN(FacialRecognitionAlgorithm):
         # model = make_model(input_shape=IMAGE_SIZE + (1, ), num_classes=len(frequencies))
 
         input_shape = self.dataset.images[0].shape + (1, )
-        self.num_classes = len(set(self.dataset.labels))
+        self.num_classes = len(set(self.dataset.labelnames))
 
         self.model = keras.Sequential(
             [
@@ -521,7 +526,72 @@ class DatasetLoader:
         y_actual = self.labelnames[self.indices[cut:]]
         
         return X_train, X_test, y_train, y_actual
+    
+class TA(DatasetLoader):
+    #CREATED IN LOAD DATA : self.images, self.indices, self.labelnames, self.labeldict,self.reversedict, self.labels, self.target_names
+    #CREATED IN SPLIT DATA: self.X_train, self.X_test, self.y_train, self.y_actual
 
+    def load_data(self):
+        # Implement the logic to load data from a specific dataset
+        pass
+        
+    def split_data(self, prop):
+        np.random.seed(18)
+        np.random.shuffle(self.indices)
+
+        cut = int((1 - prop) * len(self.images))//1
+
+        X_train =  self.images[self.indices[:cut]]
+        X_test = self.images[self.indices[cut:]]
+
+        y_train = self.labelnames[self.indices[:cut]]
+        y_actual = self.labelnames[self.indices[cut:]]
+        
+        return X_train, X_test, y_train, y_actual
+
+class TA_Data(DatasetLoader):
+
+    # def __init__(self, model_type):
+    #     self.load_data(model_type)
+        
+    # minimages, maximages, modeltype, num_features=100, prop = .2
+    def load_data(self, minimages, maximages, modeltype, IMAGE_SIZE = 100, prop = .2):
+        self.images = []
+        self.labelnames = []
+        for filename in os.listdir('./ta_data'):
+            image = Image.open('./ta_data/' + filename).resize((IMAGE_SIZE,IMAGE_SIZE))
+            name = filename[0:filename.index('_')]
+            pixels = list(image.getdata())
+            greyscale = np.zeros(IMAGE_SIZE*IMAGE_SIZE)
+
+            for i in range(len(pixels)):
+                rgb = pixels[i]
+                # use weighted grayscale function to optimize lighting differences among color hues
+                greyscale[i] = 0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]
+            
+            greyscale = greyscale.reshape((IMAGE_SIZE,IMAGE_SIZE))
+            
+            self.images.append(greyscale)
+            self.labelnames.append(name)
+        
+        self.images = np.array(self.images)
+        self.labelnames = np.array(self.labelnames)
+        self.indices = np.arange(len(self.images))
+        print(np.array(self.images).shape)
+
+        if modeltype=="CNN":
+            images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
+            label_encoder = LabelEncoder()
+            integer_labels = label_encoder.fit_transform(self.labelnames)
+            categorical_labels = to_categorical(integer_labels)
+
+            labels = keras.utils.to_categorical(np.asarray(categorical_labels))
+            self.X_train, self.X_test, self.y_train, self.y_actual = train_test_split(images, labels, test_size=0.2, random_state=18)
+        else:
+            self.X_train, self.X_test, self.y_train, self.y_actual = self.split_data()
+
+    def split_data(self, prop=.25):
+        return super().split_data(prop)
 
 class LFW(DatasetLoader):
 
@@ -530,7 +600,7 @@ class LFW(DatasetLoader):
         IMAGE_SIZE = num_features
         face_dataset = datasets.fetch_lfw_people(min_faces_per_person=minimages)
         self.target_names = face_dataset.target_names
-        if modeltype=='Fisher':
+        if modeltype == 'Fisherfaces':
             IMAGE_SIZE = min(IMAGE_SIZE, min(face_dataset.images[0].shape))
         if modeltype!='CNN':
             face_dataset.images = [cv2.resize(image, (IMAGE_SIZE, IMAGE_SIZE)) for image in face_dataset.images]
@@ -591,7 +661,7 @@ class MLApp(QWidget):
 
         datalabel = QLabel('Select your Dataset:')
         self.dataset_combo = QComboBox()
-        self.dataset_combo.addItems(['', 'LFW', 'Not Ready. Dont Pick Me'])
+        self.dataset_combo.addItems(['', 'LFW', 'Not Ready. Dont Pick Me', 'TA Data'])
 
         self.hyperparam_layout = QFormLayout()
 
@@ -656,33 +726,40 @@ class MLApp(QWidget):
         min_images = int(self.min_images_widget.text())
         max_images = int(self.max_images_widget.text())
 
+        if datasettype == "LFW":
+            dataset = LFW()
+            dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
+        elif datasettype == 'TA Data':
+            dataset = TA_Data()
+            dataset.load_data(min_images, max_images, modeltype, IMAGE_SIZE=num_features, prop=1 - train_test_split)
+
         
         if modeltype == 'Eigenfaces':
             print("Running Eigenfaces")
             c_value = float(self.c_widget.text())
-            if datasettype == "LFW":
-                dataset = LFW()
-                dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
+            # if datasettype == "LFW":
+            #     dataset = LFW()
+            #     dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
             f = Eigenfaces(modeltype, dataset, num_features,c_value=1)
         elif modeltype == 'Fisherfaces':
             print("Running Fisherfaces")
-            if datasettype == "LFW":
-                dataset = LFW()
-                dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
+            # if datasettype == "LFW":
+            #     dataset = LFW()
+            #     dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
             f = FisherFaces(modeltype, dataset, num_features)
         elif modeltype == 'LBPH':
             print("Running LBPH")
             metric = self.metric_widget.text()
-            if datasettype == "LFW":
-                dataset = LFW()
-                dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
+            # if datasettype == "LFW":
+            #     dataset = LFW()
+            #     dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
             f = LBPH(modeltype, dataset, num_features, metric)
         elif modeltype == 'CNN':
             print("RUNNING CNN")
             epochs = int(self.epochs_widget.text())
-            if datasettype == "LFW":
-                dataset = LFW()
-                dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
+            # if datasettype == "LFW":
+            #     dataset = LFW()
+            #     dataset.load_data(min_images, max_images, modeltype, num_features=num_features, prop=1 - train_test_split)
             f = CNN(modeltype, dataset, epochs)
 
         # Print all hyperparameter values and the dataset being used on separate lines
