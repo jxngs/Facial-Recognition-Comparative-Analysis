@@ -61,9 +61,6 @@ class Eigenfaces(FacialRecognitionAlgorithm):
 
 
     def __init__(self, modelname, dataset, num_features,c_value):
-        if num_features > 75:
-            print('The max number of features for eigenfaces is 75.')
-            num_features = 75
         self.n_components=num_features
         self.C=c_value
         super().__init__(modelname, dataset)
@@ -79,24 +76,12 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         self.X_test_reduced = custom_pca.transform(self.X_test)
 
     def predict(self):
-        # bestacc, bestC = 0, 1
-        # for i in range(5):
-        #     C=10**i
-        #     classifier = SVC(kernel='linear', C=1)
-        #     classifier.fit(self.X_training_reduced, self.y_train)
-        #     y_predicted = classifier.predict(self.X_test_reduced)
-        #     accuracy = accuracy_score(self.y_actual, y_predicted)
-        #     if accuracy>bestacc:
-        #         bestC = C
-        #         bestacc = accuracy
-        # self.C = bestC
-        print('predicting eigen')
+        bestacc=0
 
         self.classifier = SVC(kernel='linear', C=self.C)
         self.classifier.fit(self.X_training_reduced, self.y_train)
         self.y_predicted = self.classifier.predict(self.X_test_reduced)
         self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
-        print('finished predicting')
         
     def show_results(self):
         print(self.accuracy)
