@@ -52,7 +52,7 @@ class BFW_Probabilistic(DatasetLoader):
             people = [folder for folder in os.scandir(category.path) if folder.name != '.DS_Store']
             demographic = category.name
             demographic_probability = probabilities[demographic] if demographic in probabilities else 1
-            for person in people[:1]:
+            for person in people:
                 name = person.name
                 person_images = [file for file in os.scandir(person.path) if file.name != '.DS_Store']
                 if random.random() > demographic_probability:
