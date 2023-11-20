@@ -203,6 +203,7 @@ class CNN(FacialRecognitionAlgorithm):
     def __init__(self, modelname, dataset, epochs = 100):
         super().__init__(modelname, dataset)
         self.epochs=epochs
+        print('init', self.epochs)
         
     def train(self):
     
@@ -742,9 +743,10 @@ class MLApp(QWidget):
         self.hyperparam_layout.addRow(self.train_test_split_label, self.train_test_split_widget)
         self.hyperparam_layout.addRow(self.additional_label, self.additional_widget,)
         
-        #self.c_widget = QLineEdit(str(1.0))
-        #self.metric_widget = QLineEdit("ChiSquare")
-        #self.epochs_widget = QLineEdit(str(75))
+        # self.c_widget = QLineEdit(str(1.0))
+        # self.metric_widget = QLineEdit("ChiSquare")
+        # self.epochs_widget = QLineEdit(str(75))
+
         self.men_subset_label = QLabel("Male-Identifying %:")
         self.women_subset_label = QLabel("Female-Identifying %:")
         self.caucasian_subset_label = QLabel("Caucasian-Identifying %:")
@@ -877,18 +879,19 @@ class MLApp(QWidget):
 
         if modeltype == 'Eigenfaces':
             print("Running Eigenfaces")
-            c_value = float(self.c_widget.text())
+            c_value = float(self.additional_widget.text())
             f = Eigenfaces(modeltype, dataset, num_features,c_value=1)
         elif modeltype == 'Fisherfaces':
             print("Running Fisherfaces")
             f = FisherFaces(modeltype, dataset, num_features)
         elif modeltype == 'LBPH':
             print("Running LBPH")
-            metric = self.metric_widget.text()
+            metric = self.additional_widget.text()
             f = LBPH(modeltype, dataset, num_features, metric)
         elif modeltype == 'CNN':
             print("RUNNING CNN")
-            epochs = int(self.epochs_widget.text())
+            epochs = int(self.additional_widget.text())
+            print('running', epochs)
             f = CNN(modeltype, dataset, epochs)
 
             # Print all hyperparameter values and the dataset being used on separate lines
