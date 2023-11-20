@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import numpy as np
 import keras
+from sklearn.model_selection import train_test_split
 
 class DatasetLoader:
     
@@ -49,7 +50,10 @@ class TA_Data(DatasetLoader):
             
             self.images.append(greyscale)
             self.labelnames.append(name)
-            self.indices = np.arange(len(self.images))
+        
+        self.images = np.array(self.images)
+        self.labelnames = np.array(self.labelnames)
+        self.indices = np.arange(len(self.images))
 
         if modeltype=="CNN":
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
@@ -58,12 +62,7 @@ class TA_Data(DatasetLoader):
         else:
             self.X_train, self.X_test, self.y_train, self.y_actual = self.split_data()
 
-        print(self.labelnames)
-
     def split_data(self, prop=.25):
         return super().split_data(prop)
 
 loader = TA_Data()
-print(loader.labelnames)
-print(loader.y_train)
-print(loader.y_actual)
