@@ -855,13 +855,21 @@ class MLApp(QWidget):
         if others_proportion != 100.0:
             QMessageBox.warning(self, "Invalid Proportions", "Racial Groups must add up to 100.")
             return False
+        # self.probabilities = {
+        #     "Male": float(self.demographic_widgets[6].currentText()),
+        #     "Female": float(self.demographic_widgets[7].currentText()),
+        #     "White": float(self.demographic_widgets[8].currentText()),
+        #     "Black": float(self.demographic_widgets[9].currentText()),
+        #     "Indian": float(self.demographic_widgets[10].currentText()),
+        #     "Asian": float(self.demographic_widgets[11].currentText())
+        # }
         self.probabilities = {
-            "Male": float(self.demographic_widgets[6].currentText()),
-            "Female": float(self.demographic_widgets[7].currentText()),
-            "White": float(self.demographic_widgets[8].currentText()),
-            "Black": float(self.demographic_widgets[9].currentText()),
-            "Indian": float(self.demographic_widgets[10].currentText()),
-            "Asian": float(self.demographic_widgets[11].currentText())
+            "Male": float(self.demographic_widgets[6].text()),
+            "Female": float(self.demographic_widgets[7].text()),
+            "White": float(self.demographic_widgets[8].text()),
+            "Black": float(self.demographic_widgets[9].text()),
+            "Indian": float(self.demographic_widgets[10].text()),
+            "Asian": float(self.demographic_widgets[11].text())
         }
     
 
