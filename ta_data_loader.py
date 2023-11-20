@@ -27,6 +27,10 @@ class DatasetLoader:
         return X_train, X_test, y_train, y_actual
 
 class TA_Data(DatasetLoader):
+
+    def __init__(self):
+        self.loaddata("Fisher")
+
     def loaddata(self, modeltype, IMAGE_SIZE = 100):
         self.images = []
         self.labelnames = []
@@ -45,6 +49,7 @@ class TA_Data(DatasetLoader):
             
             self.images.append(greyscale)
             self.labelnames.append(name)
+            self.indices = np.arange(len(self.images))
 
         if modeltype=="CNN":
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
