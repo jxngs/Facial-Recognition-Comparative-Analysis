@@ -4,8 +4,13 @@ from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 import cv2
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.metrics import confusion_matrix
+import keras
+from tensorflow.keras import layers
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QComboBox, QPushButton, QVBoxLayout
 
 
 class FacialRecognitionAlgorithm:
@@ -48,8 +53,8 @@ class Eigenfaces(FacialRecognitionAlgorithm):
             return whitened_data
 
 
-    def __init__(self, modelname, ncomponents, dataset):
-        self.n_components=ncomponents
+    def __init__(self, modelname, dataset, num_features):
+        self.n_components=num_features
         super().__init__(modelname, dataset)
         
     def train(self):
@@ -69,16 +74,16 @@ class Eigenfaces(FacialRecognitionAlgorithm):
             classifier = SVC(kernel='linear', C=1)
             classifier.fit(self.X_training_reduced, self.y_train)
             self.y_predicted = classifier.predict(self.X_test_reduced)
-            accuracy = accuracy_score(self.y_actual, y_predicted)
+            accuracy = accuracy_score(self.y_actual, self.y_predicted)
             if accuracy>bestacc:
                 bestC = C
                 bestacc = accuracy
 
         self.classifier = SVC(kernel='linear', C=bestC)
         self.classifier.fit(self.X_training_reduced, self.y_train)
-        y_predicted = self.classifier.predict(self.X_test_reduced)
-        self.accuracy = accuracy_score(self.y_actual, y_predicted)
-    
+        self.y_predicted = self.classifier.predict(self.X_test_reduced)
+        self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
+        
     def show_results(self):
         print(self.accuracy)
         ConfusionMatrixDisplay.from_estimator(
@@ -89,7 +94,7 @@ class Eigenfaces(FacialRecognitionAlgorithm):
 
 
 class FisherFaces(FacialRecognitionAlgorithm):
-    def __init__(self, modelname, num_features, dataset):
+    def __init__(self, modelname, dataset, num_features):
         super().__init__(modelname, dataset)
         
         self.num_features = min(num_features, min(dataset.images[0].shape))
@@ -211,9 +216,6 @@ class FisherFaces(FacialRecognitionAlgorithm):
         for x,y in zip(self.X_test, self.y_actual):
             
             pred = predict1(x)
-            print('pred', y, pred)
-        
-            
             try:
                 self.conf_matrix[self.dataset.reversedict[y], self.dataset.reversedict[pred[0]]] += 1
             except:
@@ -246,14 +248,139 @@ class FisherFaces(FacialRecognitionAlgorithm):
         plt.show()
 
 class CNN(FacialRecognitionAlgorithm):
-    def __init__(self, model):
-        super().__init__(model)
-
+    def __init__(self, modelname, dataset, epochs = 100):
+        super().__init__(modelname, dataset)
+        self.epochs=epochs
+        
     def train(self):
-        pass
+        
+
+        #train_images, val_images, train_labels, val_labels = train_test_split(images, labels, test_size=0.2, random_state=42)
+        datagen = keras.preprocessing.image.ImageDataGenerator(
+            rotation_range=20,
+            horizontal_flip=True,
+        )
+
+        datagen.fit(self.X_train)
+
+        self.train_data_generator = datagen.flow(self.X_train, self.y_train, batch_size=64, shuffle=True)
+        self.test_data_generator = datagen.flow(self.X_test, self.y_actual, batch_size=64, shuffle=True)
+
+        # display first image in val data batch and its label -- just for validation
+        first_batch = next(self.test_data_generator)
+        #display(keras.preprocessing.image.array_to_img(first_batch[0][0] * 255))
+        print(first_batch[1][0])
+
+        self.test_data_generator = datagen.flow(self.X_test, self.y_actual, batch_size=64, shuffle=True) # reset val_data_generator
+
+        # Xception model from https://keras.io/examples/vision/image_classification_from_scratch/#using-image-data-augmentation
+
+        # def make_model(input_shape, num_classes):
+        #     inputs = keras.Input(shape=input_shape)
+
+        #     # Entry block
+        #     x = layers.Rescaling(1.0 / 255)(inputs)
+        #     x = layers.Conv2D(128, 3, strides=2, padding="same")(x)
+        #     x = layers.BatchNormalization()(x)
+        #     x = layers.Activation("relu")(x)
+
+        #     previous_block_activation = x  # Set aside residual
+
+        #     for size in [256, 512, 728]:
+        #         x = layers.Activation("relu")(x)
+        #         x = layers.SeparableConv2D(size, 3, padding="same")(x)
+        #         x = layers.BatchNormalization()(x)
+
+        #         x = layers.Activation("relu")(x)
+        #         x = layers.SeparableConv2D(size, 3, padding="same")(x)
+        #         x = layers.BatchNormalization()(x)
+
+        #         x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+        #         # Project residual
+        #         residual = layers.Conv2D(size, 1, strides=2, padding="same")(
+        #             previous_block_activation
+        #         )
+        #         x = layers.add([x, residual])  # Add back residual
+        #         previous_block_activation = x  # Set aside next residual
+
+        #     x = layers.SeparableConv2D(1024, 3, padding="same")(x)
+        #     x = layers.BatchNormalization()(x)
+        #     x = layers.Activation("relu")(x)
+
+        #     x = layers.GlobalAveragePooling2D()(x)
+        #     if num_classes == 2:
+        #         activation = "sigmoid"
+        #         units = 1
+        #     else:
+        #         activation = "softmax"
+        #         units = num_classes
+
+        #     x = layers.Dropout(0.5)(x)
+        #     outputs = layers.Dense(units, activation=activation)(x)
+        #     return keras.Model(inputs, outputs)
+
+
+        # model = make_model(input_shape=IMAGE_SIZE + (1, ), num_classes=len(frequencies))
+
+        input_shape = self.dataset.images[0].shape + (1, )
+        self.num_classes = len(set(self.dataset.labels))
+
+        self.model = keras.Sequential(
+            [
+                keras.Input(shape=input_shape),
+                layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
+                layers.MaxPooling2D(pool_size=(2, 2)),
+                layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
+                layers.MaxPooling2D(pool_size=(2, 2)),
+                layers.Flatten(),
+                layers.Dropout(0.5),
+                layers.Dense(self.num_classes, activation="softmax"),
+            ]
+        )
+
+        next(self.train_data_generator)[1].shape
+
+
+        self.callbacks = [
+            keras.callbacks.ModelCheckpoint("save_at_{epoch}.keras"),
+        ]
+        self.model.compile(
+            optimizer=keras.optimizers.legacy.Adam(1e-3), # legacy for m1 support
+            loss="categorical_crossentropy",
+                metrics=["accuracy"],
+    )
+        
 
     def predict(self):
-        pass
+        self.model.fit(
+            self.train_data_generator,
+            epochs=self.epochs,
+            callbacks=self.callbacks,
+            validation_data=self.test_data_generator,
+        )
+
+    
+    def show_results(self):
+        y_predicted = self.model.predict(self.test_data_generator)
+        
+        # Convert predictions to class labels
+        y_predicted = y_predicted.argmax(axis=1)
+        y_predicted = np.asarray([self.dataset.labeldict[y_pred] for y_pred in y_predicted])
+        print(y_predicted)
+        self.y_actual = [self.dataset.labeldict[np.where(row == 1)[0][0]] for row in self.y_actual]
+        print(self.y_actual)
+
+        self.accuracy = accuracy_score(self.y_actual, y_predicted)
+        print("Final Validation Accuracy: {:.2%}".format(self.accuracy))
+
+        # Display confusion matrix
+        cm = confusion_matrix(self.y_actual, y_predicted)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=self.dataset.target_names)
+        disp.plot(cmap='viridis', values_format='d', xticks_rotation="vertical")
+
+        plt.tight_layout()
+        plt.show()
 
 
 class LBPH(FacialRecognitionAlgorithm):
@@ -290,14 +417,15 @@ class DatasetLoader:
 
 class LFW(DatasetLoader):
 
-    def load_data(self, minimages, maximages, isFisher, IMAGE_SIZE=100):
-
+    def load_data(self, minimages, maximages, modeltype, IMAGE_SIZE=100):
+        
         
         face_dataset = datasets.fetch_lfw_people(min_faces_per_person=minimages)
-        if isFisher:
+        self.target_names = face_dataset.target_names
+        if modeltype=='Fisher':
             IMAGE_SIZE = min(IMAGE_SIZE, min(face_dataset.images[0].shape))
-
-        face_dataset.images = [cv2.resize(image, (IMAGE_SIZE, IMAGE_SIZE)) for image in face_dataset.images]
+        if modeltype!='CNN':
+            face_dataset.images = [cv2.resize(image, (IMAGE_SIZE, IMAGE_SIZE)) for image in face_dataset.images]
         
         kept_images = []
         kept_labels = []
@@ -312,7 +440,8 @@ class LFW(DatasetLoader):
             kept_labels.append(label)
             frequencies[label] += 1
 
-        self.images = np.array([vector.reshape((IMAGE_SIZE, IMAGE_SIZE)) for vector in kept_images])
+        if modeltype!='CNN':
+            kept_images = np.array([vector.reshape((IMAGE_SIZE, IMAGE_SIZE)) for vector in kept_images])
         self.labels = np.asarray(kept_labels)
 
         self.labeldict = {i: name for i, name in enumerate(face_dataset.target_names)}
@@ -323,22 +452,101 @@ class LFW(DatasetLoader):
 
         self.labelnames = np.asarray(labelnames)
 
-        self.indices = np.arange(len(self.images))
-    
+        self.indices = np.arange(len(kept_images))
+        self.images=np.asarray(kept_images)
+        
+        if modeltype=="CNN":
+            images = np.expand_dims(np.asarray(kept_images), axis=-1) # necessary to show there is 1 channel (grayscale)?
+            labels = keras.utils.to_categorical(np.asarray(kept_labels))
+            print(images.shape)
+            self.X_train, self.X_test, self.y_train, self.y_actual = train_test_split(images, labels, test_size=0.2, random_state=42)
+       
+        else:
+            print(self.images.shape)
+            self.X_train, self.X_test, self.y_train, self.y_actual = self.split_data()
+
+
     def split_data(self, prop=.25):
         return super().split_data(prop)
 
+class MLApp(QWidget):
+    def __init__(self):
+     
+        super().__init__()
 
-minimages = 50
-maximages = 150
-num_features = 40
-datasettype="LFW"
-modeltype="Fisherfaces"
-if datasettype == "LFW":
-    dataset = LFW()
-    dataset.load_data(minimages,maximages, modeltype=="Fisherfaces", IMAGE_SIZE = num_features)
-e=FisherFaces(modeltype, num_features, dataset)
-e.X_train, e.X_test, e.y_train, e.y_actual = e.dataset.split_data()
-e.train()
-e.predict()
-e.show_results()
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('ML Algorithm Selector')
+        
+        self.setGeometry(100, 100, 600, 300)  # Adjusted the window size
+
+
+        algolabel = QLabel('Select your ML algorithm:')
+        self.algorithm_combo = QComboBox()
+        self.algorithm_combo.addItems(['','Eigenfaces', 'Fisherfaces', 'LBPH', 'CNN'])
+        datalabel = QLabel('Select your Dataset:')
+        self.dataset_combo = QComboBox()
+        self.dataset_combo.addItems(['','LFW', 'Not Ready. Dont Pick Me'])
+        hyperparamoptions = QLabel('More Parameter Options Coming Soon:')
+        train_test_button = QPushButton('Train/Test Algorithm')
+        train_test_button.clicked.connect(self.train_test_algorithm)
+        # Set up the layout
+        layout = QVBoxLayout()
+        layout.addWidget(algolabel)
+        layout.addWidget(self.algorithm_combo)
+        layout.addWidget(datalabel)
+        layout.addWidget(self.dataset_combo)
+        layout.addWidget(hyperparamoptions)
+        layout.addWidget(train_test_button)
+        self.setLayout(layout)
+        self.show()
+
+    def train_test_algorithm(self):
+        modeltype = self.algorithm_combo.currentText()
+        datasettype = self.dataset_combo.currentText()
+        minimages = 50
+        maximages = 150
+        num_features = 150
+        dataset=None
+        
+        #more if options here
+        if modeltype == 'Eigenfaces':
+            print("Running Eigenfaces")
+            num_features=100
+            if datasettype == "LFW":
+                dataset = LFW()
+                dataset.load_data(minimages,maximages, modeltype, IMAGE_SIZE = num_features)
+            f=Eigenfaces(modeltype, dataset, num_features)
+        elif modeltype == 'Fisherfaces':
+            print("Running Fisherfaces")
+            num_features = 40
+            if datasettype == "LFW":
+                dataset = LFW()
+                dataset.load_data(minimages,maximages, modeltype, IMAGE_SIZE = num_features)
+            f=FisherFaces(modeltype, dataset, num_features)
+        elif modeltype == 'LBPH':
+            print("Running LBPH (NOT ACTUALLY I HAVENT FINISHED)")
+            if datasettype == "LFW":
+                dataset = LFW()
+                dataset.load_data(minimages,maximages, modeltype, IMAGE_SIZE = num_features)
+            
+        elif modeltype == 'CNN':
+            print("RUNNING CNN")
+            epochs=75
+            if datasettype == "LFW":
+                dataset = LFW()
+                dataset.load_data(minimages,maximages, modeltype, IMAGE_SIZE = num_features)
+            f=CNN(modeltype, dataset, epochs)
+
+        f.X_train, f.X_test, f.y_train, f.y_actual = f.dataset.X_train, f.dataset.X_test, f.dataset.y_train, f.dataset.y_actual
+        f.train()
+        f.predict()
+        f.show_results()
+if __name__ == '__main__':
+ 
+    app = QApplication(sys.argv)
+    ml_app = MLApp()
+    ml_app.show()
+    sys.exit(app.exec_())
+
