@@ -32,7 +32,21 @@ class FacialRecognitionAlgorithm:
         pass
 
     def print_cross_sectional(self):
-        pass
+        self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
+        self.demographic_accuracy = {}
+        # split self.y_actual into groups
+        for i, person in enumerate(self.y_actual):
+            demo_group = self.dataset.labels_to_demographics[person]
+            self.demographic_accuracy.setdefault(demo_group, [])
+            if person == self.y_predicted[i]:
+                self.demographic_accuracy[demo_group].append(1)
+            else:
+                self.demographic_accuracy[demo_group].append(0)
+        
+        for demographic in self.demographic_accuracy.keys():
+            res = self.demographic_accuracy[demographic]
+            if len(res) > 0:
+                print(demographic, sum(res)/len(res))
 
 class Eigenfaces(FacialRecognitionAlgorithm):
 
@@ -95,23 +109,6 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         )
         plt.tight_layout()
         plt.show()
-
-    def print_cross_sectional(self):
-        self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
-        self.demographic_accuracy = {}
-        # split self.y_actual into groups
-        for i, person in enumerate(self.y_actual):
-            demo_group = self.dataset.labels_to_demographics[person]
-            self.demographic_accuracy.setdefault(demo_group, [])
-            if person == self.y_predicted[i]:
-                self.demographic_accuracy[demo_group].append(1)
-            else:
-                self.demographic_accuracy[demo_group].append(0)
-        
-        for demographic in self.demographic_accuracy.keys():
-            res = self.demographic_accuracy[demographic]
-            if len(res) > 0:
-                print(demographic, sum(res)/len(res))
 
 class FisherFaces(FacialRecognitionAlgorithm):
     def __init__(self, modelname, dataset, num_features):
@@ -197,6 +194,7 @@ class FisherFaces(FacialRecognitionAlgorithm):
         print('accuracy', self.accuracy/len(self.X_test))
         
     def show_results(self):
+        self.print_cross_sectional()
         conf_matrix = confusion_matrix(self.y_actual, np.asarray(self.y_predicted), labels=self.classes)
         
         plt.imshow(conf_matrix, interpolation='nearest')
@@ -217,6 +215,7 @@ class FisherFaces(FacialRecognitionAlgorithm):
         plt.xlabel('Predicted label')
         plt.tight_layout()
         plt.show()
+
 
 class CNN(FacialRecognitionAlgorithm):
     def __init__(self, modelname, dataset, epochs = 100):
@@ -335,20 +334,22 @@ class CNN(FacialRecognitionAlgorithm):
         # Convert predictions to class labels
         y_predicted = y_predicted.argmax(axis=1)
         y_predicted = np.asarray([self.dataset.numbers_to_labels[y_pred] for y_pred in y_predicted])
+        self.y_predicted = y_predicted
         
         self.y_actual = [self.dataset.numbers_to_labels[np.where(row == 1)[0][0]] for row in self.y_actual]
         
 
         self.accuracy = accuracy_score(self.y_actual, y_predicted)
         print("Final Validation Accuracy: {:.2%}".format(self.accuracy))
-
+        
+        self.print_cross_sectional()
         # Display confusion matrix
         cm = confusion_matrix(self.y_actual, y_predicted)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=sorted(self.dataset.labels_to_numbers.keys(), key=lambda x: self.dataset.labels_to_numbers[x]))
         disp.plot(cmap='viridis', values_format='d', xticks_rotation="vertical")
         plt.tight_layout()
         plt.show()
- 
+
      
 class LBPH(FacialRecognitionAlgorithm):
     def __init__(self, modelname, dataset,num_features, metric, radius=1):
@@ -447,6 +448,7 @@ class LBPH(FacialRecognitionAlgorithm):
             if y == pred[0]: self.accuracy += 1
     def show_results(self):
         print('accuracy', self.accuracy/len(self.X_test))
+        self.print_cross_sectional()
         conf_matrix = confusion_matrix(self.y_actual, np.asarray(self.y_predicted), labels=self.classes)
         
         plt.imshow(conf_matrix, interpolation='nearest')
@@ -467,6 +469,8 @@ class LBPH(FacialRecognitionAlgorithm):
         plt.xlabel('Predicted label')
         plt.tight_layout()
         plt.show()
+
+    
 
 
 class DatasetLoader:
