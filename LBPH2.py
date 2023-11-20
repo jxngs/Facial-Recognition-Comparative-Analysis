@@ -79,7 +79,7 @@ class LBPH2:
                     heappush(heap,(-dist,person))
                 else:
                     heappushpop(heap, (-dist,person))
-        heap.sort()
+        heap.sort(reverse=True)
         return heap
     
     def getRNeighbors(self, mat, r, c, radius):
@@ -90,3 +90,21 @@ class LBPH2:
                 if j not in range(self.size): continue
                 arr.append(mat[i][j])
         return np.array(arr)
+    
+    def mean_knn(self, testpoint, metric):
+        mp = {}
+        for person in self.histograms:
+            for histogram in self.histograms[person]:
+                mp.setdefault(person, [])
+                mp[person].append(self.distance(testpoint, histogram, metric))
+        avg = {person:np.mean(np.array(mp[person])) for person in mp.keys()}
+        heap = [] 
+
+        for person in avg.keys():
+            dist = avg[person]  
+            if len(heap)<self.k:
+                heappush(heap,(-dist,person))
+            else:
+                heappushpop(heap, (-dist,person))
+        heap.sort(reverse=True)
+        return heap

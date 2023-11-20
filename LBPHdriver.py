@@ -7,7 +7,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import cv2
 import matplotlib.pyplot as plt
 
-def train_test(images, labels):
+def train_test(images, labels, num=0):
     mp = {}
     for i in range(len(images)):
         image, label = images[i], labels[i]
@@ -16,7 +16,7 @@ def train_test(images, labels):
     train_x, train_y, test_x, test_y = [], [], [], []
     for person in mp.keys():
         for i in range(len(mp[person])):
-            if i < 30:
+            if i < num:
                 train_x.append(mp[person][i])
                 train_y.append(person)
             else:
@@ -90,10 +90,11 @@ def lfw_test(NUM_FEATURES):
         heap = lbph.knn(lbph.get_Histogram(img), "ChiSquare")
         pred = [n for d, n in heap]
         pred_val = max(set(pred), key=pred.count)
+        
 
 
         print(heap)
-        print(lab)
+        print(lab, pred_val)
         print(pred_val == lab)
         if pred_val == lab: count += 1
 
