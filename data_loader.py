@@ -217,11 +217,3 @@ class BFW_Probabilistic(DatasetLoader):
 
     def split_data(self, prop=.2):
         return super().split_data(prop)
-    
-b = BFW_Probabilistic()
-b.load_data("CNN",40,0.1)
-print(b.labelnames)
-print()
-print(b.y_train)
-print()
-print(b.y_actual)
