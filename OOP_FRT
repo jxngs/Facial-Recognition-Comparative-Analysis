@@ -516,7 +516,7 @@ class BFW_Probabilistic(DatasetLoader):
                 if random.random() > demographic_probability:
                     continue
                 for image in person_images:
-                    images.append((image, num_features, num_features))
+                    images.append(self.read_image(image, num_features, num_features))
                     names.append(name)
                     demographics.append(demographic)
         
@@ -536,6 +536,14 @@ class BFW_Probabilistic(DatasetLoader):
             self.X_train, self.X_test, self.y_train, self.y_actual = self.split_data(prop)
         
         return self
+    
+    def read_image(self, path, width=80, height=80):
+        with open(path, 'rb') as file:
+            binary_data = file.read()
+            image = Image.open(io.BytesIO(binary_data))
+            resized_image = image.resize((width, height))
+            grayscaled_image = resized_image.convert('L')
+            return np.array(grayscaled_image)
         
 class BFW_Balanced(BFW_Probabilistic):
     def load_data(self, modeltype, num_features=100, prop=0.2, probabilities=None):
