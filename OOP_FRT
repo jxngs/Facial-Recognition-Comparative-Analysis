@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QComboBox, QPushButto
 from heapq import *
 import random
 import os
+import io
 from PIL import Image
 
 class FacialRecognitionAlgorithm:
@@ -324,7 +325,7 @@ class CNN(FacialRecognitionAlgorithm):
 
         # Display confusion matrix
         cm = confusion_matrix(self.y_actual, y_predicted)
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=self.dataset.target_names)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=sorted(self.dataset.labels_to_numbers.keys(), key=lambda x: self.dataset.labels_to_numbers[x]))
         disp.plot(cmap='viridis', values_format='d', xticks_rotation="vertical")
 
         plt.tight_layout()
@@ -332,8 +333,7 @@ class CNN(FacialRecognitionAlgorithm):
 
 
         
-    
-
+     
 class LBPH(FacialRecognitionAlgorithm):
     def __init__(self, modelname, dataset,num_features, metric, radius=1):
         super().__init__(modelname,dataset)
@@ -640,18 +640,19 @@ class TA_Data(DatasetLoader):
         # turn them into numpy arrays for proper indexing
         self.images = np.array(self.images)
         self.labelnames = np.array(self.labelnames)
+        self.labels_to_numbers = {}
+        i = 0
+        for label in self.labelnames:
+            if label in self.labels_to_numbers.keys():
+                continue
+            self.labels_to_numbers[label] = i
+            i += 1
+
+        self.numbers_to_labels = {value:key for key, value in self.labels_to_numbers.items()}
         
         # CNN Data Handling
         if modeltype=="CNN":
-            self.labels_to_numbers = {}
-            i = 0
-            for label in self.labelnames:
-                if label in self.labels_to_numbers.keys():
-                    continue
-                self.labels_to_numbers[label] = i
-                i += 1
 
-            self.numbers_to_labels = {value:key for key, value in self.labels_to_numbers.items()}
 
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
             labels = keras.utils.to_categorical(np.asarray([self.labels_to_numbers[label] for label in self.labelnames]))
@@ -682,16 +683,17 @@ class Yale_Data(DatasetLoader):
         self.images = np.array(images)
         self.labelnames = np.array(labels)
 
-        if modeltype=="CNN":
-            self.labels_to_numbers = {}
-            i = 0
-            for label in self.labelnames:
-                if label in self.labels_to_numbers.keys():
-                    continue
-                self.labels_to_numbers[label] = i
-                i += 1
+        self.labels_to_numbers = {}
+        i = 0
+        for label in self.labelnames:
+            if label in self.labels_to_numbers.keys():
+                continue
+            self.labels_to_numbers[label] = i
+            i += 1
 
-            self.numbers_to_labels = {value:key for key, value in self.labels_to_numbers.items()}
+        self.numbers_to_labels = {value:key for key, value in self.labels_to_numbers.items()}
+        if modeltype=="CNN":
+
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
             labels = keras.utils.to_categorical(np.asarray([self.labels_to_numbers[label] for label in self.labelnames]))
             self.X_train, self.X_test, self.y_train, self.y_actual = train_test_split(images, labels, test_size=prop, random_state=18)
@@ -751,10 +753,10 @@ class MLApp(QWidget):
         self.add_hyperparam_widget("Train/Test Split Proportion:", self.train_test_split_widget)
         modeltype = self.algorithm_combo.currentText()
         if modeltype == 'Eigenfaces':
-            self.num_features_widget.setText(str(150))
+            self.num_features_widget.setText(str(40))
             self.add_hyperparam_widget("C:", self.c_widget)
         elif modeltype == 'Fisherfaces':
-            self.num_features_widget.setText(str(45))
+            self.num_features_widget.setText(str(40))
         elif modeltype == 'LBPH':
             self.add_hyperparam_widget("Metric:", self.metric_widget)
         elif modeltype == 'CNN':
@@ -833,7 +835,7 @@ class MLApp(QWidget):
             f = Eigenfaces(modeltype, dataset, num_features,c_value=1)
         elif modeltype == 'Fisherfaces':
             print("Running Fisherfaces")
-            f = FisherFaces(modeltype, dataset, dataset.num_features)
+            f = FisherFaces(modeltype, dataset, num_features)
         elif modeltype == 'LBPH':
             print("Running LBPH")
             metric = self.metric_widget.text()
