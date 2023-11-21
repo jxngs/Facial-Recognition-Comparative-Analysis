@@ -1,5 +1,0 @@
-*.pyc
-.DS_Store
-*.keras
-__pycache__
-altered_images
