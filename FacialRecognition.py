@@ -72,7 +72,8 @@ class FacialRecognitionAlgorithm:
     def show_accuracy_hist(self, plot_acc):
         
         # data to plot
-        plt.subplot(1, 2, 1)
+        
+        plt.figure()
 
         sorted_dict = {k: plot_acc[k] for k in sorted(plot_acc.keys())}
 
@@ -103,10 +104,10 @@ class FacialRecognitionAlgorithm:
         plt.xticks(index + bar_width, groups)
         plt.legend()
 
-        plt.tight_layout()
+        plt.show()
+        plt.figure()
         
-        plt.subplot(1, 2, 2)
-
+       
 
 
 
@@ -156,8 +157,6 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         self.X_test_reduced = custom_pca.transform(self.X_test)
 
     def predict(self):
-        bestacc=0
-
         self.classifier = SVC(kernel='linear', C=self.C)
         self.classifier.fit(self.X_training_reduced, self.y_train)
         self.y_predicted = self.classifier.predict(self.X_test_reduced)
@@ -167,6 +166,8 @@ class Eigenfaces(FacialRecognitionAlgorithm):
     def show_results(self):
         print(self.accuracy)
         self.print_cross_sectional()
+        # plt.subplot(1, 2, 2)
+
         ConfusionMatrixDisplay.from_estimator(
             self.classifier, self.X_test_reduced, self.y_actual, xticks_rotation="vertical"
         )
