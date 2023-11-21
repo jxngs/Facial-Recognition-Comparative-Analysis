@@ -32,6 +32,9 @@ class FacialRecognitionAlgorithm:
         pass
 
     def print_cross_sectional(self, show=True):
+
+        if not hasattr(self.dataset, 'labels_to_demographics'): return
+
         self.accuracy = accuracy_score(self.y_actual, self.y_predicted)
         self.demographic_accuracy = {}
         self.gender_accuracy = {}
@@ -69,6 +72,39 @@ class FacialRecognitionAlgorithm:
                 res = self.demographic_accuracy[demographic]
                 if len(res) > 0:
                     print(demographic, sum(res)/len(res))
+        
+        #self.show_accuracy_hist()
+
+    def show_accuracy_hist(self):
+        # Extract race and gender information
+        races = [demographic.split('_')[0] for demographic in self.demographic_accuracy.keys()]
+        genders = [demographic.split('_')[1] for demographic in self.demographic_accuracy.keys()]
+
+        # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Define unique colors for each gender
+        gender_colors = {'females': 'red', 'males': 'blue'}
+
+        # Create a bar for each demographic group
+        for i, (demographic, accuracy) in enumerate(self.demographic_accuracy.items()):
+            race = races[i]
+            gender = genders[i]
+            color = gender_colors[gender]
+
+            ax.bar(race, accuracy, color=color, label=gender, alpha=0.7)
+
+        # Set labels and title
+        ax.set_xlabel('Race')
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Accuracy by Demographic Group')
+        ax.legend(title='Gender')
+
+        # Show the plot
+        plt.show()
+
+
+
 
 class Eigenfaces(FacialRecognitionAlgorithm):
 
