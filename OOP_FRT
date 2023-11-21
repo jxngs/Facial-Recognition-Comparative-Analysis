@@ -66,42 +66,53 @@ class FacialRecognitionAlgorithm:
                 if len(res) > 0:
                     print(demographic, sum(res)/len(res))
 
-        # cross sections
-        if show:
+        if show: 
+            plot_acc = {}
             for demographic in self.demographic_accuracy.keys():
                 res = self.demographic_accuracy[demographic]
                 if len(res) > 0:
+                    plot_acc[demographic] = sum(res)/len(res)
                     print(demographic, sum(res)/len(res))
         
-        #self.show_accuracy_hist()
+            self.show_accuracy_hist(plot_acc)
 
-    def show_accuracy_hist(self):
-        # Extract race and gender information
-        races = [demographic.split('_')[0] for demographic in self.demographic_accuracy.keys()]
-        genders = [demographic.split('_')[1] for demographic in self.demographic_accuracy.keys()]
+    def show_accuracy_hist(self, plot_acc):
+        # plt.figure()
+        
+        # data to plot
+        sorted_dict = {k: plot_acc[k] for k in sorted(plot_acc.keys())}
 
-        # Create a figure and axis
+        n_groups = 4
+        female_acc = [value for key, value in sorted_dict.items() if 'females' in key]
+        male_acc = [value for key, value in sorted_dict.items() if '_males' in key]
+
+        # create plot
         fig, ax = plt.subplots()
+        index = np.arange(n_groups)
+        bar_width = 0.35
+        opacity = 0.8
 
-        # Define unique colors for each gender
-        gender_colors = {'females': 'red', 'males': 'blue'}
+        rects1 = plt.bar(index, female_acc, bar_width,
+        alpha=opacity,
+        color='g',
+        label='Females')
 
-        # Create a bar for each demographic group
-        for i, (demographic, accuracy) in enumerate(self.demographic_accuracy.items()):
-            race = races[i]
-            gender = genders[i]
-            color = gender_colors[gender]
+        rects2 = plt.bar(index + bar_width, male_acc, bar_width,
+        alpha=opacity,
+        color='r',
+        label='Males')
 
-            ax.bar(race, accuracy, color=color, label=gender, alpha=0.7)
+        groups = sorted(self.race_accuracy.keys())
 
-        # Set labels and title
-        ax.set_xlabel('Race')
-        ax.set_ylabel('Accuracy')
-        ax.set_title('Accuracy by Demographic Group')
-        ax.legend(title='Gender')
+        plt.xlabel('Person')
+        plt.ylabel('Scores')
+        plt.title('Scores by person')
+        plt.xticks(index + bar_width, groups)
+        plt.legend()
 
-        # Show the plot
-        plt.show()
+        plt.tight_layout()
+        plt.figure()
+
 
 
 
@@ -609,8 +620,6 @@ class BFW_Probabilistic(DatasetLoader):
         self.numbers_to_labels = {i: name for name, i in self.labels_to_numbers.items()}
 
         self.labels_to_demographics = {names[i]: demo for i, demo in enumerate(demographics)}
-        # name : demographic
-        print(self.labels_to_demographics)
 
         if modeltype=="CNN":
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
