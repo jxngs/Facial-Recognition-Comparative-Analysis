@@ -927,22 +927,15 @@ class MLApp(QWidget):
         if others_proportion != 100.0:
             QMessageBox.warning(self, "Invalid Proportions", "Racial Groups must add up to 100.")
             return False
-        # self.probabilities = {
-        #     "Male": float(self.demographic_widgets[6].currentText()),
-        #     "Female": float(self.demographic_widgets[7].currentText()),
-        #     "White": float(self.demographic_widgets[8].currentText()),
-        #     "Black": float(self.demographic_widgets[9].currentText()),
-        #     "Indian": float(self.demographic_widgets[10].currentText()),
-        #     "Asian": float(self.demographic_widgets[11].currentText())
-        # }
         self.probabilities = {
-            "Male": float(self.demographic_widgets[6].text()),
-            "Female": float(self.demographic_widgets[7].text()),
-            "White": float(self.demographic_widgets[8].text()),
-            "Black": float(self.demographic_widgets[9].text()),
-            "Indian": float(self.demographic_widgets[10].text()),
-            "Asian": float(self.demographic_widgets[11].text())
-        }
+                    "Male": float(self.demographic_widgets[6].text()) if self.demographic_widgets[6].text() else None,
+                    "Female": float(self.demographic_widgets[7].text()) if self.demographic_widgets[7].text() else None,
+                    "White": float(self.demographic_widgets[8].text()) if self.demographic_widgets[8].text() else None,
+                    "Black": float(self.demographic_widgets[9].text()) if self.demographic_widgets[9].text() else None,
+                    "Indian": float(self.demographic_widgets[10].text()) if self.demographic_widgets[10].text() else None,
+                    "Asian": float(self.demographic_widgets[11].text()) if self.demographic_widgets[11].text() else None
+                }
+    
         return True
 
 
