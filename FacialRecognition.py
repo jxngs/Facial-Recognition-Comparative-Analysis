@@ -24,7 +24,7 @@ class FacialRecognitionAlgorithm:
     def show_results(self):
         pass
 
-    def print_cross_sectional(self, show=True):
+    def print_cross_sectional(self, model='', show=True):
 
         if not hasattr(self.dataset, 'labels_to_demographics'): return
 
@@ -67,11 +67,14 @@ class FacialRecognitionAlgorithm:
                     plot_acc[demographic] = sum(res)/len(res)
                     print(demographic, sum(res)/len(res))
         
-            self.show_accuracy_hist(plot_acc)
+            if model == 'figure': self.show_accuracy_hist_figure(plot_acc)    
+            else: self.show_accuracy_hist(plot_acc)
+            
 
     def show_accuracy_hist(self, plot_acc):
         
         # data to plot
+        
         plt.subplot(1, 2, 1)
 
         sorted_dict = {k: plot_acc[k] for k in sorted(plot_acc.keys())}
@@ -103,11 +106,42 @@ class FacialRecognitionAlgorithm:
         plt.xticks(index + bar_width, groups)
         plt.legend()
 
-        plt.tight_layout()
-        
         plt.subplot(1, 2, 2)
+        
+        
+    def show_accuracy_hist_figure(self, plot_acc):
+        
+        sorted_dict = {k: plot_acc[k] for k in sorted(plot_acc.keys())}
 
+        n_groups = 4
+        female_acc = [value for key, value in sorted_dict.items() if 'females' in key]
+        male_acc = [value for key, value in sorted_dict.items() if '_males' in key]
 
+        # create plot
+        index = np.arange(n_groups)
+        bar_width = 0.35
+        opacity = 0.8
+
+        rects1 = plt.bar(index, female_acc, bar_width,
+        alpha=opacity,
+        color='g',
+        label='Females')
+
+        rects2 = plt.bar(index + bar_width, male_acc, bar_width,
+        alpha=opacity,
+        color='r',
+        label='Males')
+
+        groups = sorted(self.race_accuracy.keys())
+
+        plt.xlabel('Person')
+        plt.ylabel('Scores')
+        plt.title('Scores by person')
+        plt.xticks(index + bar_width, groups)
+        plt.legend()
+
+        plt.show()
+        
 
 
 
@@ -156,8 +190,6 @@ class Eigenfaces(FacialRecognitionAlgorithm):
         self.X_test_reduced = custom_pca.transform(self.X_test)
 
     def predict(self):
-        bestacc=0
-
         self.classifier = SVC(kernel='linear', C=self.C)
         self.classifier.fit(self.X_training_reduced, self.y_train)
         self.y_predicted = self.classifier.predict(self.X_test_reduced)
@@ -166,7 +198,9 @@ class Eigenfaces(FacialRecognitionAlgorithm):
 
     def show_results(self):
         print(self.accuracy)
-        self.print_cross_sectional()
+        self.print_cross_sectional('figure')
+        # plt.subplot(1, 2, 2)
+
         ConfusionMatrixDisplay.from_estimator(
             self.classifier, self.X_test_reduced, self.y_actual, xticks_rotation="vertical"
         )
@@ -405,7 +439,7 @@ class CNN(FacialRecognitionAlgorithm):
         self.accuracy = accuracy_score(self.y_actual, y_predicted)
         print("Final Validation Accuracy: {:.2%}".format(self.accuracy))
         
-        self.print_cross_sectional()
+        self.print_cross_sectional('figure')
         # Display confusion matrix
         cm = confusion_matrix(self.y_actual, y_predicted)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=sorted(self.dataset.labels_to_numbers.keys(), key=lambda x: self.dataset.labels_to_numbers[x]))
