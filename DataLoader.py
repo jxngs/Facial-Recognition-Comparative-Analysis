@@ -1,5 +1,5 @@
 
-
+from sklearn.model_selection import train_test_split
 import numpy as np
 from sklearn import datasets
 import cv2
@@ -88,7 +88,6 @@ class BFW_Probabilistic(DatasetLoader):
         self.numbers_to_labels = {i: name for name, i in self.labels_to_numbers.items()}
 
         self.labels_to_demographics = {names[i]: demo for i, demo in enumerate(demographics)}
-
         if modeltype=="CNN":
             images = np.expand_dims(np.asarray(self.images), axis=-1) # necessary to show there is 1 channel (grayscale)?
             labels = keras.utils.to_categorical(np.asarray([self.labels_to_numbers[label] for label in self.labelnames]))
