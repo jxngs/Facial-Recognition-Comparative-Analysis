@@ -9,7 +9,6 @@ import random
 import os
 import io
 from PIL import Image
-from sklearn.model_selection import train_test_split
 
 class DatasetLoader:
 
@@ -67,21 +66,15 @@ class BFW_Probabilistic(DatasetLoader):
         if probabilities is None:
             probabilities = {}
 
-        max_proportion = max(probabilities.values()) if probabilities else 100
-        max_proportion_number = 20
-        if max_proportion_number != 100:
-            print(f"Warning: Leaving some people out of dataset (only using {max_proportion_number / 100 * 100}% for highest group)")
-
         for category in categories:
             people = [folder for folder in os.scandir(category.path) if folder.name != '.DS_Store']
             demographic = category.name
-            demographic_probability = (probabilities[demographic] if demographic in probabilities else max_proportion)/max_proportion
-            demographic_number = round(max_proportion_number * demographic_probability)
-            print(f"Demographic {demographic} has {demographic_number} people selected")
-            selected_people = random.sample(people, demographic_number)
-            for person in selected_people:
+            demographic_probability = probabilities[demographic] if demographic in probabilities else 1
+            for person in people[:1]:
                 name = person.name
                 person_images = [file for file in os.scandir(person.path) if file.name != '.DS_Store']
+                if random.random() > demographic_probability:
+                    continue
                 for image in person_images:
                     images.append(self.read_image(image, num_features, num_features))
                     names.append(name)
