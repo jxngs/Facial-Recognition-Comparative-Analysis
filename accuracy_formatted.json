@@ -1,0 +1,429 @@
+{
+    "0": {
+        "accuracy": 0.6,
+        "model": "Eigenfaces",
+        "dataset": "LFW",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "n_components": 50,
+            "C": 1
+        },
+        "proportions": {}
+    },
+    "1": {
+        "accuracy": 0.39545454545454545,
+        "model": "Fisherfaces",
+        "dataset": "LFW",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "num_features": 50
+        },
+        "proportions": {}
+    },
+    "2": {
+        "accuracy": 0.37272727272727274,
+        "model": "LBPH",
+        "dataset": "LFW",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "size": 50,
+            "metric": "ChiSquare",
+            "radius": 1
+        },
+        "proportions": {}
+    },
+    "3": {
+        "accuracy": 0.8590909090909091,
+        "model": "CNN",
+        "dataset": "LFW",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "epochs": 100
+        },
+        "proportions": {}
+    },
+    "4": {
+        "accuracy": 0.875,
+        "model": "Eigenfaces",
+        "dataset": "TA Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "n_components": 50,
+            "C": 1
+        },
+        "proportions": {}
+    },
+    "5": {
+        "accuracy": 0.625,
+        "model": "Fisherfaces",
+        "dataset": "TA Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "num_features": 50
+        },
+        "proportions": {}
+    },
+    "6": {
+        "accuracy": 0.875,
+        "model": "LBPH",
+        "dataset": "TA Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "size": 50,
+            "metric": "ChiSquare",
+            "radius": 1
+        },
+        "proportions": {}
+    },
+    "7": {
+        "accuracy": 0.5,
+        "model": "CNN",
+        "dataset": "TA Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "epochs": 100
+        },
+        "proportions": {}
+    },
+    "8": {
+        "accuracy": 0.9696969696969697,
+        "model": "Eigenfaces",
+        "dataset": "Yale Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "n_components": 50,
+            "C": 1
+        },
+        "proportions": {}
+    },
+    "9": {
+        "accuracy": 0.7272727272727273,
+        "model": "Fisherfaces",
+        "dataset": "Yale Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "num_features": 50
+        },
+        "proportions": {}
+    },
+    "10": {
+        "accuracy": 0.7575757575757576,
+        "model": "LBPH",
+        "dataset": "Yale Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "size": 50,
+            "metric": "ChiSquare",
+            "radius": 1
+        },
+        "proportions": {}
+    },
+    "11": {
+        "accuracy": 0.9393939393939394,
+        "model": "CNN",
+        "dataset": "Yale Data",
+        "race_accuracy": {},
+        "gender_accuracy": {},
+        "demographic_accuracy": {},
+        "hyperparams": {
+            "epochs": 100
+        },
+        "proportions": {}
+    },
+    "12": {
+        "accuracy": 0.2,
+        "model": "Eigenfaces",
+        "dataset": "BFW Probabilistic",
+        "race_accuracy": {
+            "white": 0.1642512077294686,
+            "black": 0.19,
+            "asian": 0.20408163265306123,
+            "indian": 0.28421052631578947
+        },
+        "gender_accuracy": {
+            "males": 0.245136186770428,
+            "females": 0.1522633744855967
+        },
+        "demographic_accuracy": {
+            "white_males": 0.21359223300970873,
+            "black_females": 0.16,
+            "white_females": 0.11538461538461539,
+            "asian_females": 0.1702127659574468,
+            "asian_males": 0.23529411764705882,
+            "indian_males": 0.33962264150943394,
+            "indian_females": 0.21428571428571427,
+            "black_males": 0.22
+        },
+        "hyperparams": {
+            "n_components": 50,
+            "C": 1
+        },
+        "proportions": {
+            "asian_females": 0.1,
+            "asian_males": 0.1,
+            "black_females": 0.1,
+            "black_males": 0.1,
+            "indian_females": 0.1,
+            "indian_males": 0.1,
+            "white_females": 0.2,
+            "white_males": 0.2
+        }
+    },
+    "13": {
+        "accuracy": 0.12,
+        "model": "Fisherfaces",
+        "dataset": "BFW Probabilistic",
+        "race_accuracy": {
+            "white": 0.1111111111111111,
+            "black": 0.13,
+            "asian": 0.08163265306122448,
+            "indian": 0.16842105263157894
+        },
+        "gender_accuracy": {
+            "males": 0.14007782101167315,
+            "females": 0.09876543209876543
+        },
+        "demographic_accuracy": {
+            "white_males": 0.1262135922330097,
+            "black_females": 0.14,
+            "white_females": 0.09615384615384616,
+            "asian_females": 0.0425531914893617,
+            "asian_males": 0.11764705882352941,
+            "indian_males": 0.20754716981132076,
+            "indian_females": 0.11904761904761904,
+            "black_males": 0.12
+        },
+        "hyperparams": {
+            "num_features": 50
+        },
+        "proportions": {
+            "asian_females": 0.1,
+            "asian_males": 0.1,
+            "black_females": 0.1,
+            "black_males": 0.1,
+            "indian_females": 0.1,
+            "indian_males": 0.1,
+            "white_females": 0.2,
+            "white_males": 0.2
+        }
+    },
+    "14": {
+        "accuracy": 0.076,
+        "model": "LBPH",
+        "dataset": "BFW Probabilistic",
+        "race_accuracy": {
+            "white": 0.08695652173913043,
+            "black": 0.01,
+            "asian": 0.10204081632653061,
+            "indian": 0.09473684210526316
+        },
+        "gender_accuracy": {
+            "males": 0.07392996108949416,
+            "females": 0.07818930041152264
+        },
+        "demographic_accuracy": {
+            "white_males": 0.06796116504854369,
+            "black_females": 0.0,
+            "white_females": 0.10576923076923077,
+            "asian_females": 0.0851063829787234,
+            "asian_males": 0.11764705882352941,
+            "indian_males": 0.09433962264150944,
+            "indian_females": 0.09523809523809523,
+            "black_males": 0.02
+        },
+        "hyperparams": {
+            "size": 50,
+            "metric": "ChiSquare",
+            "radius": 1
+        },
+        "proportions": {
+            "asian_females": 0.1,
+            "asian_males": 0.1,
+            "black_females": 0.1,
+            "black_males": 0.1,
+            "indian_females": 0.1,
+            "indian_males": 0.1,
+            "white_females": 0.2,
+            "white_males": 0.2
+        }
+    },
+    "15": {
+        "accuracy": 0.322,
+        "model": "CNN",
+        "dataset": "BFW Probabilistic",
+        "race_accuracy": {
+            "white": 0.32682926829268294,
+            "black": 0.32038834951456313,
+            "indian": 0.3,
+            "asian": 0.3333333333333333
+        },
+        "gender_accuracy": {
+            "males": 0.3715415019762846,
+            "females": 0.27125506072874495
+        },
+        "demographic_accuracy": {
+            "white_males": 0.3508771929824561,
+            "white_females": 0.2967032967032967,
+            "black_females": 0.25,
+            "indian_females": 0.2608695652173913,
+            "asian_males": 0.4318181818181818,
+            "black_males": 0.39215686274509803,
+            "asian_females": 0.25862068965517243,
+            "indian_males": 0.3409090909090909
+        },
+        "hyperparams": {
+            "epochs": 200
+        },
+        "proportions": {
+            "asian_females": 0.1,
+            "asian_males": 0.1,
+            "black_females": 0.1,
+            "black_males": 0.1,
+            "indian_females": 0.1,
+            "indian_males": 0.1,
+            "white_females": 0.2,
+            "white_males": 0.2
+        }
+    },
+    "16": {
+        "accuracy": 0.1925,
+        "model": "Eigenfaces",
+        "dataset": "BFW Balanced",
+        "race_accuracy": {
+            "white": 0.13861386138613863,
+            "indian": 0.233502538071066,
+            "asian": 0.2,
+            "black": 0.19886363636363635
+        },
+        "gender_accuracy": {
+            "males": 0.16707021791767554,
+            "females": 0.21963824289405684
+        },
+        "demographic_accuracy": {
+            "white_males": 0.12380952380952381,
+            "indian_females": 0.2222222222222222,
+            "asian_males": 0.168,
+            "indian_males": 0.24489795918367346,
+            "black_males": 0.12941176470588237,
+            "black_females": 0.26373626373626374,
+            "asian_females": 0.24,
+            "white_females": 0.15463917525773196
+        },
+        "hyperparams": {
+            "n_components": 50,
+            "C": 1
+        },
+        "proportions": {}
+    },
+    "17": {
+        "accuracy": 0.16875,
+        "model": "Fisherfaces",
+        "dataset": "BFW Balanced",
+        "race_accuracy": {
+            "white": 0.15346534653465346,
+            "indian": 0.20304568527918782,
+            "asian": 0.14222222222222222,
+            "black": 0.18181818181818182
+        },
+        "gender_accuracy": {
+            "males": 0.13559322033898305,
+            "females": 0.2041343669250646
+        },
+        "demographic_accuracy": {
+            "white_males": 0.14285714285714285,
+            "indian_females": 0.21212121212121213,
+            "asian_males": 0.112,
+            "indian_males": 0.19387755102040816,
+            "black_males": 0.09411764705882353,
+            "black_females": 0.26373626373626374,
+            "asian_females": 0.18,
+            "white_females": 0.16494845360824742
+        },
+        "hyperparams": {
+            "num_features": 50
+        },
+        "proportions": {}
+    },
+    "18": {
+        "accuracy": 0.05,
+        "model": "LBPH",
+        "dataset": "BFW Balanced",
+        "race_accuracy": {
+            "white": 0.04455445544554455,
+            "indian": 0.07106598984771574,
+            "asian": 0.035555555555555556,
+            "black": 0.05113636363636364
+        },
+        "gender_accuracy": {
+            "males": 0.04116222760290557,
+            "females": 0.059431524547803614
+        },
+        "demographic_accuracy": {
+            "white_males": 0.047619047619047616,
+            "indian_females": 0.09090909090909091,
+            "asian_males": 0.024,
+            "indian_males": 0.05102040816326531,
+            "black_males": 0.047058823529411764,
+            "black_females": 0.054945054945054944,
+            "asian_females": 0.05,
+            "white_females": 0.041237113402061855
+        },
+        "hyperparams": {
+            "size": 50,
+            "metric": "ChiSquare",
+            "radius": 1
+        },
+        "proportions": {}
+    },
+    "19": {
+        "accuracy": 0.27375,
+        "model": "CNN",
+        "dataset": "BFW Balanced",
+        "race_accuracy": {
+            "white": 0.2561576354679803,
+            "indian": 0.26424870466321243,
+            "black": 0.291866028708134,
+            "asian": 0.28205128205128205
+        },
+        "gender_accuracy": {
+            "males": 0.3015075376884422,
+            "females": 0.2462686567164179
+        },
+        "demographic_accuracy": {
+            "white_males": 0.2647058823529412,
+            "indian_females": 0.17204301075268819,
+            "black_males": 0.3018867924528302,
+            "black_females": 0.2815533980582524,
+            "indian_males": 0.35,
+            "asian_males": 0.28888888888888886,
+            "asian_females": 0.2761904761904762,
+            "white_females": 0.24752475247524752
+        },
+        "hyperparams": {
+            "epochs": 200
+        },
+        "proportions": {}
+    }
+}
